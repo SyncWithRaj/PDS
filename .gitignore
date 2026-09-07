@@ -1,0 +1,47 @@
+# Python Virtual Environments
+.venv
+.venv/
+.venv/**
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Large fine-tuning datasets & model weights
+*.gguf
+*.safetensors
+*.bin
+dataset_100k.jsonl
+data/
+outputs/
+checkpoints/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing & Logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log

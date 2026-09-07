@@ -30,7 +30,7 @@ Designing scalable, fault-tolerant, and cost-effective software architectures is
 4. **Autonomous Refinement Feedback Loop**: If the architecture falls below the target threshold (e.g., 85/100), the Refinement Agent iteratively applies surgical architectural patches based on the Critic's deficiency log until the system converges.
 5. **First-Class ML / Data Science / Big Data Subsystems**: Seamlessly generates end-to-end architectures for ML/DS systems, including feature stores, streaming aggregation, vector databases, GPU inference clusters, and drift-monitoring pipelines.
 
-> 📖 **Full Cross-Domain Guide**: For deep-dive architectural blueprints covering **AI/ML systems, Autonomous Bots, Web/Mobile Apps, IoT, and FinTech**, see [DOMAIN_SUPPORT.md](DOMAIN_SUPPORT.md).
+> 📖 **Full Cross-Domain Guide**: For deep-dive architectural blueprints covering **AI/ML systems, Autonomous Bots, Web/Mobile Apps, IoT, and FinTech**, see [DOMAIN_SUPPORT.md](docs/DOMAIN_SUPPORT.md).
 
 ---
 
