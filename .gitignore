@@ -31,6 +31,9 @@ dataset_100k.jsonl
 data/
 outputs/
 checkpoints/
+nirmanai_adapter/
+nirmanai_merged_16bit/
+nirmanai_gguf/
 
 # IDE & Editor files
 .vscode/
