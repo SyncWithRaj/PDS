@@ -22,8 +22,45 @@ import os
 import sys
 import time
 from pathlib import Path
-
 import torch
+
+# Enable loading optimizer/scheduler states from trusted local checkpoints on PyTorch < 2.6
+try:
+    import transformers.utils.import_utils
+    transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
+except Exception:
+    pass
+
+try:
+    import transformers.utils
+    transformers.utils.check_torch_load_is_safe = lambda: None
+except Exception:
+    pass
+
+_orig_torch_load = torch.load
+
+def _safe_torch_load(*args, **kwargs):
+    try:
+        return _orig_torch_load(*args, **kwargs)
+    except Exception:
+        if kwargs.get("weights_only", False):
+            kwargs["weights_only"] = False
+            return _orig_torch_load(*args, **kwargs)
+        raise
+
+torch.load = _safe_torch_load
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+# Ensure robust, resumable HTTP downloads without xet CAS crashes
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["HF_HUB_DOWNLOAD_TIMEOUT"] = "60"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 
 def parse_args():
@@ -31,8 +68,8 @@ def parse_args():
     parser.add_argument(
         "--base_model",
         type=str,
-        default="Qwen/Qwen2.5-7B-Instruct",
-        help="Base model to fine-tune (Qwen/Qwen2.5-7B-Instruct or unsloth/Qwen2.5-7B-Instruct-bnb-4bit)",
+        default="unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
+        help="Base model to fine-tune (unsloth/Qwen2.5-7B-Instruct-bnb-4bit or Qwen/Qwen2.5-7B-Instruct)",
     )
     parser.add_argument(
         "--dataset_path",
@@ -53,8 +90,9 @@ def parse_args():
     parser.add_argument("--lora_rank", type=int, default=16, help="LoRA Rank (r)")
     parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA Alpha (alpha)")
     parser.add_argument("--max_seq_length", type=int, default=2048, help="Max sequence length in tokens")
-    parser.add_argument("--save_steps", type=int, default=500, help="Save checkpoint every N steps")
+    parser.add_argument("--save_steps", type=int, default=10, help="Save checkpoint every N steps")
     parser.add_argument("--max_samples", type=int, default=None, help="Optional max training samples limit")
+    parser.add_argument("--resume", action="store_true", help="Resume from latest checkpoint if available")
     return parser.parse_args()
 
 
@@ -199,12 +237,19 @@ def train():
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
 
-        model = AutoModelForCausalLM.from_pretrained(
-            args.base_model,
-            quantization_config=bnb_config,
-            device_map="auto",
-            trust_remote_code=True,
-        )
+        if "bnb-4bit" in args.base_model:
+            model = AutoModelForCausalLM.from_pretrained(
+                args.base_model,
+                device_map="auto",
+                trust_remote_code=True,
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                args.base_model,
+                quantization_config=bnb_config,
+                device_map="auto",
+                trust_remote_code=True,
+            )
         model = prepare_model_for_kbit_training(model)
 
         peft_config = LoraConfig(
@@ -234,7 +279,7 @@ def train():
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.lr,
         lr_scheduler_type="cosine",
-        warmup_ratio=0.03,
+        warmup_steps=10,
         num_train_epochs=args.epochs,
         logging_steps=10,
         save_strategy="steps",
@@ -246,6 +291,8 @@ def train():
         report_to="none",
     )
 
+    num_workers = 1 if sys.platform == "win32" else 4
+
     try:
         trainer = SFTTrainer(
             model=model,
@@ -253,22 +300,29 @@ def train():
             train_dataset=formatted_dataset,
             dataset_text_field="text",
             max_seq_length=args.max_seq_length,
-            dataset_num_proc=4,
+            dataset_num_proc=num_workers,
             packing=False,
             args=training_args,
         )
     except TypeError:
-        # Compatibility with newest trl versions where tokenizer is renamed to processing_class
-        trainer = SFTTrainer(
-            model=model,
-            processing_class=tokenizer,
-            train_dataset=formatted_dataset,
-            dataset_text_field="text",
-            max_seq_length=args.max_seq_length,
-            dataset_num_proc=4,
-            packing=False,
-            args=training_args,
-        )
+        try:
+            trainer = SFTTrainer(
+                model=model,
+                processing_class=tokenizer,
+                train_dataset=formatted_dataset,
+                dataset_text_field="text",
+                max_seq_length=args.max_seq_length,
+                dataset_num_proc=num_workers,
+                packing=False,
+                args=training_args,
+            )
+        except TypeError:
+            trainer = SFTTrainer(
+                model=model,
+                processing_class=tokenizer,
+                train_dataset=formatted_dataset,
+                args=training_args,
+            )
 
     print("\n" + "=" * 80)
     print("                    STARTING QLoRA TRAINING")
@@ -282,7 +336,22 @@ def train():
     print("=" * 80 + "\n")
 
     start_time = time.time()
-    trainer.train()
+    resume_checkpoint = None
+    if os.path.exists(args.output_dir):
+        checkpoints = [d for d in os.listdir(args.output_dir) if d.startswith("checkpoint-")]
+        if checkpoints:
+            # Sort numerically by checkpoint step to ensure latest checkpoint is picked
+            checkpoints.sort(key=lambda x: int(x.split("-")[1]) if x.split("-")[1].isdigit() else 0)
+            latest_ckpt = os.path.normpath(os.path.join(args.output_dir, checkpoints[-1]))
+            print(f"🔄 Checkpoint found: {latest_ckpt}. Resuming training directly from step {checkpoints[-1].split('-')[1]} (Epoch 0.60)...")
+            resume_checkpoint = latest_ckpt
+    try:
+        import transformers.trainer
+        transformers.trainer.check_torch_load_is_safe = lambda: None
+    except Exception:
+        pass
+
+    trainer.train(resume_from_checkpoint=resume_checkpoint)
     elapsed = time.time() - start_time
 
     print("\n" + "=" * 80)

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTech & Payment Settlement System Architecture (50M DAU) - NirmanAI Architecture Dossier</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --card-bg: #151f38;
+            --border-color: #263558;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .header-title h1 { font-size: 1.85rem; color: #fff; margin-bottom: 0.5rem; }
+        .tags { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .tag {
+            background: #1e3a8a;
+            color: #93c5fd;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid #3b82f6;
+        }
+        .score-box {
+            text-align: center;
+            background: #0f172a;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 1rem 1.75rem;
+        }
+        .score-val { font-size: 2.5rem; font-weight: 800; color: #10b981; }
+        .score-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+        section { margin-bottom: 2.5rem; }
+        h2 { font-size: 1.4rem; color: var(--accent-blue); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .overview-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            font-size: 1.05rem;
+            color: #cbd5e1;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .kpi-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; }
+        .kpi-value { font-size: 1.35rem; font-weight: 700; color: #fff; }
+        .diagram-card {
+            background: #0d1527;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+        th, td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+            font-size: 0.92rem;
+        }
+        th { background: #0f172a; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+        code { background: #1e293b; color: #38bdf8; padding: 0.2rem 0.45rem; border-radius: 4px; font-size: 0.88rem; }
+        .badge { padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        .badge-pass { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .badge-review { background: #78350f; color: #fbbf24; border: 1px solid #d97706; }
+        .progress-bar { background: #1e293b; border-radius: 9999px; height: 8px; width: 100px; overflow: hidden; }
+        .progress-fill { background: var(--accent-emerald); height: 100%; }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .card h4 { color: #e2e8f0; margin-bottom: 0.5rem; }
+        .rationale-text { color: #94a3b8; font-size: 0.92rem; }
+        ul { margin-left: 1.5rem; color: #cbd5e1; }
+        footer { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0; border-top: 1px solid var(--border-color); margin-top: 3rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>🏛️ FinTech & Payment Settlement System Architecture (50M DAU)</h1>
+                <div class="tags">
+                    <span class="tag">FinTech & Payment Settlement</span>
+                    <span class="tag">Microservices</span>
+                    <span class="tag">AWS</span>
+                </div>
+            </div>
+            <div class="score-box">
+                <div class="score-val">91.4</div>
+                <div class="score-label">Critic Score (8 Pillars)</div>
+            </div>
+        </header>
+
+        <section>
+            <h2>1. System Overview</h2>
+            <div class="overview-box">A production-grade, highly scalable Microservices architecture engineered for the FinTech & Payment Settlement domain deployed natively on AWS. The architecture is organized into segregated tiers including global edge ingress with automated DDoS mitigation, stateless containerized microservices running on Amazon EKS (Kubernetes) autoscaling to handle a peak load of 78,124 QPS, an asynchronous event streaming backbone powered by Amazon MSK (Managed Kafka), and an 80/20 in-memory Redis cluster allocating 186 GB RAM for sub-5ms p99 read latencies. Data persistence is backed by Amazon Aurora PostgreSQL (Multi-AZ Multi-Region) with multi-AZ active replication supporting 3824.2 TB across a 5-year operational lifecycle.</div>
+        </section>
+
+        <section>
+            <h2>2. Deterministic Capacity Planning</h2>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Daily Active Users</div>
+                    <div class="kpi-value">50,000,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Peak Concurrency</div>
+                    <div class="kpi-value">78,124 QPS</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Peak Bandwidth</div>
+                    <div class="kpi-value">2.38 Gbps</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">5-Year Physical Storage</div>
+                    <div class="kpi-value">3824.2 TB</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Redis 80/20 RAM</div>
+                    <div class="kpi-value">186 GB</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Compute Cluster</div>
+                    <div class="kpi-value">~33 Pods</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>3. Visual Topology (Mermaid.js)</h2>
+            <div class="diagram-card">
+                <pre class="mermaid">
+flowchart LR
+    %% Client & Perimeter Tier
+    subgraph CLIENTS["Client Layer"]
+        WebUI["Web Application"]
+        MobileApp["Mobile Client"]
+        APIConsumer["Third-Party API Clients"]
+    end
+
+    %% Edge & Ingress Security Tier
+    subgraph INGRESS["Edge Ingress & Security Tier"]
+        CDN["Amazon CloudFront"]
+        APIGW["Amazon API Gateway + AWS WAF"]
+        WAF["Web Application Firewall (DDoS Protection)"]
+    end
+
+    %% Stateless Compute Microservices Tier
+    subgraph COMPUTE["Stateless Microservices Tier"]
+        AuthSvc["Identity & Auth Service (mTLS)"]
+        CoreSvc["Core Domain Services (33 Pods)"]
+        WorkerSvc["Background Event Workers"]
+    end
+
+    %% Caching & Asynchronous Event Streaming
+    subgraph STREAMING["Caching & Messaging Backbone"]
+        Redis["Amazon ElastiCache for Redis (13 nodes, 186 GB RAM)"]
+        Kafka["Amazon MSK (Managed Kafka)"]
+    end
+
+    %% Persistence & Lakehouse Tier
+    subgraph PERSISTENCE["Polyglot Persistence Tier"]
+        PrimaryDB[("Amazon Aurora PostgreSQL (Multi-AZ Multi-Region)")]
+        DataLake[("Amazon S3 + AWS Lake Formation")]
+    end
+
+    %% Observability & Telemetry
+    subgraph OBSERVE["Telemetry & Observability"]
+        Prom["Prometheus / Metrics"]
+        Graf["Grafana Dashboards"]
+        OTel["OpenTelemetry Tracing"]
+    end
+
+    %% Relationships & Communication Pathways
+    CLIENTS -->|HTTPS / TLS 1.3| CDN
+    CDN -->|Inspect & Filter| WAF
+    WAF -->|Route| APIGW
+    APIGW -->|Authenticate| AuthSvc
+    APIGW -->|gRPC RPC| CoreSvc
+    CoreSvc -->|Sub-5ms Cache Lookup| Redis
+    CoreSvc -->|ACID Persistence| PrimaryDB
+    CoreSvc -->|Async Pub/Sub| Kafka
+    Kafka -->|Consume Events| WorkerSvc
+    Kafka -->|Batch Ingestion| DataLake
+    CoreSvc -.->|Trace Export| OTel
+    OTel --> Prom --> Graf
+                </pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>4. Component Topology Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component Tier</th>
+                        <th>Selected Technology</th>
+                        <th>Architectural Rationale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Edge Ingress & CDN Layer</strong></td><td><code>Amazon CloudFront</code></td><td>Global edge caching, TLS 1.3 termination, and DDoS mitigation.</td></tr><tr><td><strong>API Gateway & Security Proxy</strong></td><td><code>Amazon API Gateway + AWS WAF</code></td><td>Centralized authentication validation, distributed rate-limiting, and routing.</td></tr><tr><td><strong>Identity & Access Management Service</strong></td><td><code>OAuth2 / OIDC + Istio mTLS</code></td><td>Zero-trust token verification, session lifecycle management, and RBAC authorization.</td></tr><tr><td><strong>Core Microservices Compute Tier</strong></td><td><code>Amazon EKS (Kubernetes) (~33 Pods)</code></td><td>Domain-driven microservices processing FinTech & Payment Settlement transactional workflows.</td></tr><tr><td><strong>Asynchronous Event Streaming Backbone</strong></td><td><code>Amazon MSK (Managed Kafka)</code></td><td>Decouples read/write pipelines, asynchronous event dispatch, and audit logging.</td></tr><tr><td><strong>Distributed In-Memory Cache Tier</strong></td><td><code>Amazon ElastiCache for Redis (13 nodes, 186 GB RAM)</code></td><td>Cache-aside layer holding 80/20 hot data working set (185.97 GB RAM).</td></tr><tr><td><strong>Transactional OLTP Persistent Store</strong></td><td><code>Amazon Aurora PostgreSQL (Multi-AZ Multi-Region)</code></td><td>ACID-compliant primary store engineered for 1274.75 TB 5-year growth.</td></tr><tr><td><strong>Analytical Data Lakehouse Tier</strong></td><td><code>Amazon S3 + AWS Lake Formation</code></td><td>Historical analytics, event auditing, reporting, and asynchronous batch processing.</td></tr><tr><td><strong>Observability & Alerting Tier</strong></td><td><code>OpenTelemetry + Prometheus + Grafana + ELK</code></td><td>Distributed end-to-end tracing, metrics collection, and automated anomaly alerting.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>5. Architectural Trade-Off Analysis</h2>
+            <div class='card trade-card'><h4>Polyglot Persistence Layer</h4><p><strong>Chosen:</strong> <code class='tech-tag'>Amazon Aurora PostgreSQL (Multi-AZ Multi-Region) + Redis Cache</code> &nbsp;|&nbsp; <strong>Discarded:</strong> <code>Single Monolithic Relational Database</code></p><p class='rationale-text'>Separating transactional persistence from an in-memory cache holding the 80/20 hot set (186 GB RAM) allows achieving sub-5ms read latency at 62,499 read QPS at the cost of cache-invalidation management.</p></div><div class='card trade-card'><h4>Asynchronous Event Decoupling</h4><p><strong>Chosen:</strong> <code class='tech-tag'>Amazon MSK (Managed Kafka)</code> &nbsp;|&nbsp; <strong>Discarded:</strong> <code>Direct Synchronous REST/gRPC Chained Calls</code></p><p class='rationale-text'>Decoupling core write operations via an event stream protects downstream services from cascading failures under peak load, trading immediate read-your-writes consistency for high availability and fault isolation.</p></div>
+        </section>
+
+        <section>
+            <h2>6. Bottleneck Identification & Mitigation Strategies</h2>
+            <div class='card mit-card'><h4>⚠️ Traffic Surges Exceeding Peak Concurrency (78,124 QPS)</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Deployed on Amazon EKS (Kubernetes) configured with Horizontal Pod Autoscaling (HPA) targeting ~33 pods, backed by edge rate limiting at the API Gateway.</p></div><div class='card mit-card'><h4>⚠️ Single Point of Failure in Relational Database</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Configured Multi-AZ Active-Active replication with automated failover and read replicas.</p></div><div class='card mit-card'><h4>⚠️ Database Connection Pool Exhaustion on Flash Read Bursts</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Deployed 13-node Redis Cluster absorbing ~80% of read volume in-memory.</p></div>
+        </section>
+
+        <section>
+            <h2>7. Critic Scorecard Audit (8 Pillars)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pillar Name</th>
+                        <th>Weight</th>
+                        <th>Score</th>
+                        <th>Verdict</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Scalability & Throughput (15%)</td><td>15%</td><td><strong>92.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 92.0%;'></div></div></td></tr><tr><td>Latency & Performance SLAs (15%)</td><td>15%</td><td><strong>94.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 94.0%;'></div></div></td></tr><tr><td>Reliability & Fault Tolerance (15%)</td><td>15%</td><td><strong>90.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 90.0%;'></div></div></td></tr><tr><td>Data Consistency & CAP Adherence (15%)</td><td>15%</td><td><strong>90.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 90.0%;'></div></div></td></tr><tr><td>Security, Compliance & Zero-Trust (10%)</td><td>10%</td><td><strong>92.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 92.0%;'></div></div></td></tr><tr><td>Cost & Resource Efficiency (10%)</td><td>10%</td><td><strong>88.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 88.0%;'></div></div></td></tr><tr><td>ML/Data Pipeline Rigor (10%)</td><td>10%</td><td><strong>90.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 90.0%;'></div></div></td></tr><tr><td>Requirement & Constraint Alignment (10%)</td><td>10%</td><td><strong>95.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 95.0%;'></div></div></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        
+
+        <footer>
+            Generated autonomously by <strong>NirmanAI</strong> • Multi-Agent Architecture Engine
+        </footer>
+    </div>
+</body>
+</html>
