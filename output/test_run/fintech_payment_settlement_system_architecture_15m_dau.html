@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTech & Payment Settlement System Architecture (15M DAU) - NirmanAI Architecture Dossier</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+    <style>
+        :root {
+            --bg-color: #0b1120;
+            --card-bg: #151f38;
+            --border-color: #263558;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-emerald: #10b981;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .header-title h1 { font-size: 1.85rem; color: #fff; margin-bottom: 0.5rem; }
+        .tags { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .tag {
+            background: #1e3a8a;
+            color: #93c5fd;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            border: 1px solid #3b82f6;
+        }
+        .score-box {
+            text-align: center;
+            background: #0f172a;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 1rem 1.75rem;
+        }
+        .score-val { font-size: 2.5rem; font-weight: 800; color: #ef4444; }
+        .score-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+        section { margin-bottom: 2.5rem; }
+        h2 { font-size: 1.4rem; color: var(--accent-blue); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        .overview-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            font-size: 1.05rem;
+            color: #cbd5e1;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .kpi-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem; }
+        .kpi-value { font-size: 1.35rem; font-weight: 700; color: #fff; }
+        .diagram-card {
+            background: #0d1527;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.75rem;
+        }
+        th, td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+            font-size: 0.92rem;
+        }
+        th { background: #0f172a; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; }
+        code { background: #1e293b; color: #38bdf8; padding: 0.2rem 0.45rem; border-radius: 4px; font-size: 0.88rem; }
+        .badge { padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        .badge-pass { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+        .badge-review { background: #78350f; color: #fbbf24; border: 1px solid #d97706; }
+        .progress-bar { background: #1e293b; border-radius: 9999px; height: 8px; width: 100px; overflow: hidden; }
+        .progress-fill { background: var(--accent-emerald); height: 100%; }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .card h4 { color: #e2e8f0; margin-bottom: 0.5rem; }
+        .rationale-text { color: #94a3b8; font-size: 0.92rem; }
+        ul { margin-left: 1.5rem; color: #cbd5e1; }
+        footer { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0; border-top: 1px solid var(--border-color); margin-top: 3rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-title">
+                <h1>🏛️ FinTech & Payment Settlement System Architecture (15M DAU)</h1>
+                <div class="tags">
+                    <span class="tag">FinTech & Payment Settlement</span>
+                    <span class="tag">Event-Driven</span>
+                    <span class="tag">AWS</span>
+                </div>
+            </div>
+            <div class="score-box">
+                <div class="score-val">62.5</div>
+                <div class="score-label">Critic Score (8 Pillars)</div>
+            </div>
+        </header>
+
+        <section>
+            <h2>1. System Overview</h2>
+            <div class="overview-box">A production-grade, highly available FinTech & Payment Settlement system architecture designed for the AWS cloud. The system is architected across segregated tiers including edge ingress with DDoS protection, stateless microservices with automated horizontal scaling, high-throughput asynchronous event streaming, and polyglot persistent datastores engineered to satisfy 'Tokenized Payment Ingress, Real-Time Fraud Detection Pipeline, Idempotent Transaction Processor, Strict ACID Double-Entry Ledger'. The architecture is designed to meet strict 'P99 < 10ms read, P99 < 50ms write, 99.999% uptime, Strong ACID consistency' operational constraints.</div>
+        </section>
+
+        <section>
+            <h2>2. Quantitative Capacity Sizing</h2>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Daily Active Users</div>
+                    <div class="kpi-value">15,000,000</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Peak Concurrency</div>
+                    <div class="kpi-value">20,832 QPS</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Peak Bandwidth</div>
+                    <div class="kpi-value">0.64 Gbps</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">5-Year Physical Storage</div>
+                    <div class="kpi-value">1147.3 TB</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Redis 80/20 RAM</div>
+                    <div class="kpi-value">56 GB</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Compute Cluster</div>
+                    <div class="kpi-value">~10 Pods</div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>3. Visual Topology (Mermaid.js)</h2>
+            <div class="diagram-card">
+                <pre class="mermaid">
+flowchart LR
+    %% Clients
+    subgraph CLIENTS
+        WebUI["Web UI"] -->|HTTPS| APIGW["API Gateway"]
+        MobileApp["Mobile App"] -->|HTTPS| APIGW
+        PartnerAPI["Partner API Consumer"] -->|HTTPS| APIGW
+    end
+
+    %% Network & Security Perimeter
+    subgraph PERIMETER
+        direction TB
+        CDN[CDN] --> WAF["Web Application Firewall"]
+        WAF --> APIGW
+        APIGW --> LB["Load Balancer"]
+        LB --> ServiceMesh["Service Mesh (Istio)"]
+        VPN["Site-to-Site VPN"] -.-> ServiceMesh
+        Firewall["Network Firewall"] -.-> ServiceMesh
+    end
+
+    %% Identity & Access Management
+    IAM["IAM / OIDC Provider"] -->|Token Issuance| APIGW
+    MFA["MFA Service"] --> IAM
+    Vault["Secrets Vault"] --> ServiceMesh
+
+    %% Core Services - Event Driven
+    subgraph EVENT_DRIVEN_CORE
+        direction TB
+        OrderSvc["Order Service<br/>(CQRS Write Model)"] 
+        PaymentSvc["Payment Service<br/>(Event-Driven)"]
+        FraudDetect["Fraud Detection Engine<br/>(Real-time ML)"]
+        Ledger["Ledger Service<br/>(ACID Double-Entry)"]
+        Notification["Notification Service"]
+
+        OrderSvc -->|Publish OrderCreated| Kafka["Kafka Topic: Orders"]
+        PaymentSvc -->|Consume OrderCreated| Kafka
+        PaymentSvc -->|Publish PaymentRequest| Kafka
+        FraudDetect -->|Consume PaymentRequest| Kafka
+        FraudDetect -->|Publish FraudDecision| Kafka
+        Ledger -->|Consume FraudDecision| Kafka
+        Ledger -->|Publish LedgerEntry| Kafka
+        Notification -->|Consume LedgerEntry| Kafka
+    end
+
+    %% Messaging Backbone
+    Kafka -->|Replication| KafkaCluster["AWS MSK Cluster"]
+
+    %% Data Stores
+    subgraph DATA_LAYER
+        direction TB
+        Postgres["PostgreSQL<br/>(Relational DB)"]
+        Dynamo["DynamoDB<br/>(Token Store)"]
+        Redis["Redis Cache"]
+        ES["Elasticsearch<br/>(Search & Analytics)"]
+        VectorDB["Vector DB<br/>(Fraud Embeddings)"]
+
+        OrderSvc --> Postgres
+        PaymentSvc --> Dynamo
+        FraudDetect --> VectorDB
+        Ledger --> Postgres
+        Notification --> Redis
+        Notification --> ES
+    end
+
+    %% Observability
+    subgraph OBSERVABILITY
+        Prometheus[Prometheus] --> Grafana["Grafana Dashboard"]
+        Loki["ELK Stack"] --> Grafana
+        OTEL["OpenTelemetry Collector"] --> Prometheus
+        OTEL --> Loki
+    end
+
+    %% DevOps / Platform
+    subgraph DEVOPS
+        K8s["Kubernetes Multi-Cluster"]
+        CI["CI/CD Pipelines"]
+        GitRepo["Git Repository"]
+        K8s --> ServiceMesh
+        CI --> K8s
+        GitRepo --> CI
+    end
+
+    %% Compliance & Governance
+    subgraph COMPLIANCE
+        PCI["PCI-DSS Controls"]
+        GDPR["GDPR Data Guardrails"]
+        SOC2["SOC2 Auditing"]
+        PCI -->|Enforce| ServiceMesh
+        GDPR -->|Enforce| ServiceMesh
+        SOC2 -->|Audit Logs| Loki
+    end
+
+    %% Connections
+    ServiceMesh -->|gRPC/HTTP| OrderSvc
+    ServiceMesh -->|gRPC/HTTP| PaymentSvc
+    ServiceMesh -->|gRPC/HTTP| FraudDetect
+    ServiceMesh -->|gRPC/HTTP| Ledger
+    ServiceMesh -->|gRPC/HTTP| Notification
+
+    %% External Integrations
+    subgraph EXTERNAL
+        BankAPI["Banking API<br/>FEDWIRE"]
+        ACH["ACH Network"]
+        CardNetwork["Card Network<br/>Visa/Mastercard"]
+    end
+
+    PaymentSvc -->|Async Wire| BankAPI
+    PaymentSvc -->|ACH Transfer| ACH
+    PaymentSvc -->|Tokenization| CardNetwork
+
+    %% High-Availability & DR
+    subgraph HA_DR
+        direction LR
+        RegionA["AWS Region us-east-1"]
+        RegionB["AWS Region eu-west-1"]
+        RegionA -->|Cross-Region Replication| RegionB
+        RegionB -->|Failover| RegionA
+    end
+
+    %% Styling
+    classDef perimeter fill:#f9f,stroke:#333
+                </pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>4. Component Topology Breakdown</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Component Tier</th>
+                        <th>Selected Technology</th>
+                        <th>Architectural Rationale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>API Gateway & Ingress Layer</strong></td><td><code>AWS Ingress / Envoy Gateway / Kong</code></td><td>Centralized TLS termination, OAuth2/JWT token validation, and distributed rate limiting.</td></tr><tr><td><strong>Edge Perimeter & Security</strong></td><td><code>Cloudflare CDN + Web Application Firewall (WAF)</code></td><td>Shields against DDoS attacks and caches static/hot assets at edge points of presence.</td></tr><tr><td><strong>Service Mesh Control Plane</strong></td><td><code>Istio / Envoy Proxy Sidecars</code></td><td>Enforces Mutual TLS (mTLS) for zero-trust east-west communication and telemetry collection.</td></tr><tr><td><strong>Core Application Microservices</strong></td><td><code>Kubernetes (K8s) on AWS with Horizontal Pod Autoscaling (HPA)</code></td><td>Containerized, stateless business logic services that scale elastically based on CPU and request load.</td></tr><tr><td><strong>Event Streaming Backbone</strong></td><td><code>Apache Kafka Cluster with Multi-AZ Replication</code></td><td>High-throughput asynchronous pub/sub messaging with strict partition ordering for event replay.</td></tr><tr><td><strong>Relational Data Store</strong></td><td><code>PostgreSQL Multi-AZ Primary with Read Replicas</code></td><td>Provides strict ACID transactional guarantees for high-integrity user and financial records.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>5. Architectural Trade-Off Analysis</h2>
+            <div class='card trade-card'><h4>Architecture Decision #1</h4><p><strong>Chosen:</strong> <code class='tech-tag'>Selected distributed Event-Driven architecture to achieve high throughput at 20,832 QPS</code> &nbsp;|&nbsp; <strong>Discarded:</strong> <code>Alternative approach</code></p><p class='rationale-text'>Selected distributed Event-Driven architecture to achieve high throughput at 20,832 QPS.</p></div>
+        </section>
+
+        <section>
+            <h2>6. Bottleneck Identification & Mitigation Strategies</h2>
+            <div class='card mit-card'><h4>⚠️ Database read/write lock contention under 20,832 QPS mitigated via distributed c</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Database read/write lock contention under 20,832 QPS mitigated via distributed caching and queue-based leveling.</p></div><div class='card mit-card'><h4>⚠️ [DEF-01] Aurora PostgreSQL has a hard limit of 128 TB per cluster volume, making it physically impossible to store the target 1147.3 TB of 5-year data.</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Implement a hot/warm/cold storage architecture. Keep active double-entry ledger data in Aurora (sharded), and offload settled historical transactions to Amazon DynamoDB or Amazon S3 (parquet format) queried via Amazon Athena.</p></div><div class='card mit-card'><h4>⚠️ [DEF-02] Missing the required 56 GB Redis Cache cluster. Direct database queries for 15M DAU at 20,832 QPS will overwhelm the relational database.</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Deploy an Amazon ElastiCache for Redis cluster (minimum 56 GB RAM, multi-AZ with auto-failover) as a cache-aside layer for account balances and tokenized payment data.</p></div><div class='card mit-card'><h4>⚠️ [DEF-03] Complete absence of ML infrastructure or streaming analytics for the 'Real-Time Fraud Detection Pipeline' mentioned in the overview.</h4><p class='rationale-text'><strong>Mitigation Strategy:</strong> Introduce an asynchronous streaming analytics engine (e.g., Apache Flink / AWS Managed Service for Apache Flink) consuming from Kafka, coupled with an Amazon SageMaker endpoint for real-time fraud scoring.</p></div>
+        </section>
+
+        <section>
+            <h2>7. Critic Scorecard Audit (8 Pillars)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pillar Name</th>
+                        <th>Weight</th>
+                        <th>Score</th>
+                        <th>Verdict</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Scalability & Throughput (15%)</td><td>15%</td><td><strong>65.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 65.0%;'></div></div></td></tr><tr><td>Latency & Performance SLAs (15%)</td><td>15%</td><td><strong>60.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 60.0%;'></div></div></td></tr><tr><td>Reliability & Fault Tolerance (15%)</td><td>15%</td><td><strong>75.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 75.0%;'></div></div></td></tr><tr><td>Data Consistency & CAP Adherence (15%)</td><td>15%</td><td><strong>70.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 70.0%;'></div></div></td></tr><tr><td>Security, Compliance & Zero-Trust (10%)</td><td>10%</td><td><strong>85.0</strong></td><td><span class='badge badge-pass'>PASS</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 85.0%;'></div></div></td></tr><tr><td>Cost & Resource Efficiency (10%)</td><td>10%</td><td><strong>50.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 50.0%;'></div></div></td></tr><tr><td>ML/Data Pipeline Rigor (10%)</td><td>10%</td><td><strong>30.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 30.0%;'></div></div></td></tr><tr><td>Requirement & Constraint Alignment (10%)</td><td>10%</td><td><strong>55.0</strong></td><td><span class='badge badge-review'>REVIEW</span></td><td><div class='progress-bar'><div class='progress-fill' style='width: 55.0%;'></div></div></td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section><h2>Refinement History & Self-Correction</h2><div class='card ref-card'><h4>Iteration 1 (Score: 79.55 → 62.5)</h4><ul><li><code>Configure Multi-AZ Active-Active Automated Failover</code>: Upgraded PostgreSQL to a Multi-Region Aurora Global Database configuration with automated failover and synchronous replication across availability zones.</li><li><code>Replace Synchronous RPC with Event-Driven Bus (Kafka)</code>: Migrated internal high-throughput synchronous inter-service calls to gRPC with connection multiplexing and client-side caching.</li></ul></div></section>
+
+        <footer>
+            Generated autonomously by <strong>NirmanAI</strong> • LangGraph Multi-Agent Architecture Engine
+        </footer>
+    </div>
+</body>
+</html>

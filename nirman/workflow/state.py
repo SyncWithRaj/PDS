@@ -17,6 +17,7 @@ from nirman.schemas.dossier import ArchitectureDossier
 class NirmanState(TypedDict):
     """Global state container for the NirmanAI LangGraph cyclic architecture engine."""
     raw_prompt: str
+    enhanced_prompt: Optional[str]
     spec: Optional[RequirementSpec]
     capacity: Optional[CapacityMetrics]
     architecture: Optional[SystemArchitecture]
@@ -24,6 +25,8 @@ class NirmanState(TypedDict):
     iterations: int
     max_iterations: int
     refinement_history: List[RefinementIteration]
+    best_architecture: Optional[SystemArchitecture]
+    best_score: Optional[float]
     dossier: Optional[ArchitectureDossier]
     saved_files: Optional[Dict[str, str]]
     error: Optional[str]

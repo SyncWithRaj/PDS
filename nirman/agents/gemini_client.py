@@ -84,17 +84,18 @@ class GeminiClient:
             "generationConfig": {
                 "temperature": 0.2,
                 "maxOutputTokens": 16384,
+                "responseMimeType": "application/json",
             }
         }
         data_bytes = json.dumps(payload).encode("utf-8")
 
         models_to_try = [self.model_name]
-        for fallback_m in ["gemini-3.5-flash", "gemini-flash-lite-latest", "gemini-3.1-flash-lite"]:
+        for fallback_m in ["gemini-3.5-flash", "gemini-1.5-flash", "gemini-3.5-flash-lite"]:
             if fallback_m not in models_to_try:
                 models_to_try.append(fallback_m)
 
         total_keys = len(self.api_keys) if self.api_keys else 1
-        max_key_rotations = total_keys * 2  # Allows full cycle through all keys twice
+        max_key_rotations = min(total_keys * 2, max_retries * total_keys)  # Respect max_retries
 
         last_error = None
         for current_model in models_to_try:

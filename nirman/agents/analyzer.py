@@ -81,78 +81,175 @@ Be realistic, rigorous, and mathematically grounded."""
 
 
 class RequirementAnalyzerAgent:
-    """Real LLM Agent that analyzes prompts and outputs RequirementSpec & CapacityMetrics."""
+    """Real LLM Agent that analyzes prompts with self-validation, retry, and domain enhancement.
+    
+    Agent Capabilities:
+    - Error handling with structured retries (up to 3 attempts)
+    - Output self-validation (checks critical fields for sanity)
+    - Self-correction (feeds validation errors back to LLM for re-generation)
+    - Domain context enrichment via PromptEnhancer integration
+    """
+
+    MAX_RETRIES = 3
 
     def __init__(self, gemini_client: Optional[GeminiClient] = None):
         self.client = gemini_client or GeminiClient()
 
+    def _validate_output(self, output: AnalyzerOutput) -> list[str]:
+        """Self-validation: checks critical fields for sanity. Returns list of issues."""
+        issues = []
+        if output.target_dau <= 0:
+            issues.append(f"target_dau must be positive, got {output.target_dau}")
+        if output.avg_qps <= 0:
+            issues.append(f"avg_qps must be positive, got {output.avg_qps}")
+        if output.peak_qps <= 0:
+            issues.append(f"peak_qps must be positive, got {output.peak_qps}")
+        if output.peak_qps < output.avg_qps:
+            issues.append(f"peak_qps ({output.peak_qps}) should be >= avg_qps ({output.avg_qps})")
+        if output.daily_storage_gb <= 0:
+            issues.append(f"daily_storage_gb must be positive, got {output.daily_storage_gb}")
+        if len(output.functional_requirements) < 2:
+            issues.append(f"Expected at least 2 functional requirements, got {len(output.functional_requirements)}")
+        if len(output.non_functional_requirements) < 1:
+            issues.append(f"Expected at least 1 non-functional requirement, got {len(output.non_functional_requirements)}")
+        return issues
+
+    def _parse_read_write_ratio(self, ratio_str: str) -> tuple[float, float]:
+        """Parse LLM-provided read:write ratio string into float percentages."""
+        try:
+            parts = ratio_str.replace(" ", "").split(":")
+            read_val = float(parts[0])
+            write_val = float(parts[1])
+            total = read_val + write_val
+            return round(read_val / total, 2), round(write_val / total, 2)
+        except (ValueError, IndexError, ZeroDivisionError):
+            logger.warning(f"Could not parse read_write_ratio '{ratio_str}', defaulting to 80:20")
+            return 0.80, 0.20
+
     def analyze(self, prompt: str) -> Tuple[RequirementSpec, CapacityMetrics]:
-        """Invokes Gemini LLM to reason and extract specs and capacity sizing."""
-        user_prompt = f"Analyze this system design requirement and provide a complete architectural specification and capacity estimation:\n\n\"{prompt}\""
+        """Invokes Gemini LLM with retry, self-validation, and self-correction.
         
-        # Real LLM call
-        output: AnalyzerOutput = self.client.generate_structured(
-            system_prompt=ANALYZER_SYSTEM_PROMPT,
-            user_prompt=user_prompt,
-            schema=AnalyzerOutput,
+        Agent loop:
+        1. Enhance prompt with domain context
+        2. Call LLM to extract specs
+        3. Validate output for sanity
+        4. If validation fails, retry with correction prompt (up to MAX_RETRIES)
+        """
+        # Phase 0: Domain enhancement
+        try:
+            from nirman.agents.enhancer import PromptEnhancer
+            enhancer = PromptEnhancer()
+            enhanced_data = enhancer.enhance(prompt)
+            enhanced_prompt = enhanced_data.get("enhanced_prompt", prompt) if isinstance(enhanced_data, dict) else prompt
+            logger.info("✅ PromptEnhancer enriched user prompt with domain context.")
+        except Exception as e:
+            logger.warning(f"PromptEnhancer failed ({e}), using raw prompt.")
+            enhanced_prompt = prompt
+
+        user_prompt = (
+            f"Analyze this system design requirement and provide a complete "
+            f"architectural specification and capacity estimation:\n\n\"{enhanced_prompt}\""
         )
 
-        # Assemble RequirementSpec
-        spec = RequirementSpec(
-            raw_prompt=prompt,
-            domain=output.domain,
-            target_scale=output.target_scale,
-            cloud_provider=output.cloud_provider,
-            preferred_style=output.preferred_style,
-            target_dau=output.target_dau,
-            peak_factor=output.peak_factor,
-            functional_requirements=output.functional_requirements,
-            non_functional_requirements=output.non_functional_requirements,
-            constraints=output.constraints,
-        )
+        last_error = None
+        for attempt in range(1, self.MAX_RETRIES + 1):
+            try:
+                logger.info(f"🔍 Analyzer attempt {attempt}/{self.MAX_RETRIES}...")
+                output: AnalyzerOutput = self.client.generate_structured(
+                    system_prompt=ANALYZER_SYSTEM_PROMPT,
+                    user_prompt=user_prompt,
+                    schema=AnalyzerOutput,
+                )
 
-        # Assemble CapacityMetrics
-        traffic = TrafficMetrics(
-            dau=output.target_dau,
-            read_write_ratio=output.read_write_ratio,
-            read_ratio=0.80,
-            write_ratio=0.20,
-            avg_qps=output.avg_qps,
-            peak_qps=output.peak_qps,
-            read_peak_qps=int(output.peak_qps * 0.8),
-            write_peak_qps=int(output.peak_qps * 0.2),
-        )
+                # Self-validation
+                issues = self._validate_output(output)
+                if issues:
+                    issues_str = "; ".join(issues)
+                    logger.warning(f"⚠️ Analyzer output validation failed (attempt {attempt}): {issues_str}")
+                    if attempt < self.MAX_RETRIES:
+                        # Self-correction: feed validation errors back to LLM
+                        user_prompt = (
+                            f"Your previous analysis had these issues: {issues_str}\n\n"
+                            f"Please fix these problems and re-analyze this requirement:\n\n\"{enhanced_prompt}\""
+                        )
+                        continue
+                    else:
+                        logger.warning("⚠️ Max retries reached. Using last output despite validation issues.")
 
-        yearly_tb = round((output.daily_storage_gb * 365) / 1024, 2)
-        storage = StorageMetrics(
-            daily_storage_gb=output.daily_storage_gb,
-            yearly_storage_tb=yearly_tb,
-            five_year_storage_tb=output.five_year_storage_tb,
-            effective_5yr_storage_tb=output.effective_5yr_storage_tb,
-        )
+                # Build RequirementSpec
+                spec = RequirementSpec(
+                    raw_prompt=prompt,
+                    domain=output.domain,
+                    target_scale=output.target_scale,
+                    cloud_provider=output.cloud_provider,
+                    preferred_style=output.preferred_style,
+                    target_dau=output.target_dau,
+                    peak_factor=output.peak_factor,
+                    functional_requirements=output.functional_requirements,
+                    non_functional_requirements=output.non_functional_requirements,
+                    constraints=output.constraints,
+                )
 
-        total_bw = round(output.ingress_bandwidth_gbps + output.egress_bandwidth_gbps, 3)
-        network = NetworkMetrics(
-            ingress_bandwidth_gbps=output.ingress_bandwidth_gbps,
-            egress_bandwidth_gbps=output.egress_bandwidth_gbps,
-            total_peak_bandwidth_gbps=total_bw,
-        )
+                # Build CapacityMetrics — use LLM-provided ratios, NOT hardcoded
+                read_ratio, write_ratio = self._parse_read_write_ratio(output.read_write_ratio)
+                
+                traffic = TrafficMetrics(
+                    dau=output.target_dau,
+                    read_write_ratio=output.read_write_ratio,
+                    read_ratio=read_ratio,
+                    write_ratio=write_ratio,
+                    avg_qps=output.avg_qps,
+                    peak_qps=output.peak_qps,
+                    read_peak_qps=int(output.peak_qps * read_ratio),
+                    write_peak_qps=int(output.peak_qps * write_ratio),
+                )
 
-        cache = CacheMetrics(
-            cache_memory_ram_gb=output.cache_memory_ram_gb,
-            recommended_nodes=output.recommended_cache_nodes,
-        )
+                yearly_tb = round((output.daily_storage_gb * 365) / 1024, 2)
+                storage = StorageMetrics(
+                    daily_storage_gb=output.daily_storage_gb,
+                    yearly_storage_tb=yearly_tb,
+                    five_year_storage_tb=output.five_year_storage_tb,
+                    effective_5yr_storage_tb=output.effective_5yr_storage_tb,
+                )
 
-        capacity = CapacityMetrics(
-            traffic=traffic,
-            storage=storage,
-            network=network,
-            cache=cache,
-            recommended_compute_pods=output.recommended_compute_pods,
-        )
+                total_bw = round(output.ingress_bandwidth_gbps + output.egress_bandwidth_gbps, 3)
+                network = NetworkMetrics(
+                    ingress_bandwidth_gbps=output.ingress_bandwidth_gbps,
+                    egress_bandwidth_gbps=output.egress_bandwidth_gbps,
+                    total_peak_bandwidth_gbps=total_bw,
+                )
 
-        return spec, capacity
+                cache = CacheMetrics(
+                    cache_memory_ram_gb=output.cache_memory_ram_gb,
+                    recommended_nodes=output.recommended_cache_nodes,
+                )
+
+                capacity = CapacityMetrics(
+                    traffic=traffic,
+                    storage=storage,
+                    network=network,
+                    cache=cache,
+                    recommended_compute_pods=output.recommended_compute_pods,
+                )
+
+                logger.info(f"✅ Analyzer completed successfully on attempt {attempt}.")
+                return spec, capacity
+
+            except Exception as e:
+                last_error = e
+                logger.error(f"❌ Analyzer attempt {attempt} failed: {e}")
+                if attempt < self.MAX_RETRIES:
+                    user_prompt = (
+                        f"The previous attempt failed with error: {str(e)}\n\n"
+                        f"Please try again and analyze this requirement:\n\n\"{enhanced_prompt}\""
+                    )
+                    continue
+
+        raise RuntimeError(
+            f"RequirementAnalyzerAgent failed after {self.MAX_RETRIES} attempts. Last error: {last_error}"
+        )
 
 
 # Alias for backward compatibility
 RequirementAnalyzer = RequirementAnalyzerAgent
+

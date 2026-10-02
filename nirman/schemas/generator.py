@@ -59,3 +59,11 @@ class SystemArchitecture(BaseModel):
     connections: List[ConnectionEdge] = Field(default_factory=list, description="All service-to-service communication edges")
     mermaid_diagram: str = Field(..., description="Full production-grade Mermaid.js code")
     technology_stack: Dict[str, str] = Field(default_factory=dict, description="Key technology mappings (Gateway, DB, Cache, etc.)")
+    trade_offs: List[str] = Field(
+        default_factory=list,
+        description="Concrete architectural trade-offs specific to this system design (e.g., 'Chose eventual consistency over strong consistency for notification fanout to achieve sub-100ms delivery at cost of 2-5s stale reads.')"
+    )
+    bottleneck_mitigations: List[str] = Field(
+        default_factory=list,
+        description="Identified bottlenecks and their specific mitigations (e.g., 'Bottleneck: Single PostgreSQL writer under 50k TPS peak. Mitigation: Citus horizontal sharding with consistent hash on user_id across 8 shard nodes.')"
+    )

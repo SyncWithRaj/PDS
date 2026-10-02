@@ -25,7 +25,11 @@ from nirman.schemas.dossier import (
 
 
 class SynthesizerAgent:
-    """Deliverable Compiler Agent assembling final production deliverables."""
+    """Deliverable Compiler Agent assembling final production deliverables.
+    
+    Dynamically extracts trade-offs and bottleneck mitigations from the actual
+    LLM-generated SystemArchitecture rather than using hardcoded boilerplate.
+    """
 
     def synthesize(
         self,
@@ -35,7 +39,7 @@ class SynthesizerAgent:
         scorecard: CriticScorecard,
         refinements: Optional[List[RefinementIteration]] = None,
     ) -> ArchitectureDossier:
-        """Assembles the final validated ArchitectureDossier."""
+        """Assembles the final validated ArchitectureDossier with DYNAMIC content."""
         refinements = refinements or []
 
         components_detail = [
@@ -47,44 +51,74 @@ class SynthesizerAgent:
             for c in arch.components
         ]
 
-        trade_offs = [
-            TradeOffItem(
-                decision="Polyglot Persistence Layer",
-                option_chosen=f"{arch.technology_stack.get('Primary Database', 'OLTP Store')} + In-Memory Cache",
-                option_discarded="Single Monolithic Relational Database",
-                trade_off_rationale=(
-                    f"Separating transactional persistence from an in-memory cache holding the 80/20 hot set "
-                    f"({capacity.cache.cache_memory_ram_gb:.0f} GB RAM) achieves sub-10ms read latency at {capacity.traffic.read_peak_qps:,} read QPS."
+        # DYNAMIC trade-offs from LLM-generated architecture (NOT hardcoded)
+        trade_offs = []
+        if arch.trade_offs:
+            # Use actual LLM-generated trade-offs specific to this architecture
+            for i, to_text in enumerate(arch.trade_offs):
+                trade_offs.append(
+                    TradeOffItem(
+                        decision=f"Architecture Decision #{i+1}",
+                        option_chosen=to_text.split(".")[0] if "." in to_text else to_text[:80],
+                        option_discarded="Alternative approach",
+                        trade_off_rationale=to_text,
+                    )
+                )
+        else:
+            # Fallback: generate semi-dynamic defaults using actual architecture data
+            trade_offs = [
+                TradeOffItem(
+                    decision=f"Persistence Strategy for {arch.system_name}",
+                    option_chosen=f"{arch.technology_stack.get('Primary Database', 'OLTP Store')} + In-Memory Cache",
+                    option_discarded="Single Monolithic Database",
+                    trade_off_rationale=(
+                        f"Separating transactional persistence from an in-memory cache holding the 80/20 hot set "
+                        f"({capacity.cache.cache_memory_ram_gb:.0f} GB RAM) achieves sub-10ms read latency at {capacity.traffic.read_peak_qps:,} read QPS."
+                    ),
                 ),
-            ),
-            TradeOffItem(
-                decision="Asynchronous Event Streaming Backbone",
-                option_chosen=arch.technology_stack.get("Messaging Backbone", "Distributed Kafka"),
-                option_discarded="Direct Synchronous REST/gRPC Chained Calls",
-                trade_off_rationale=(
-                    "Decoupling write operations through an event bus protects downstream services from cascading "
-                    "failures under peak load, trading immediate consistency for high availability and fault isolation."
-                ),
-            ),
-        ]
+            ]
 
-        mitigations = [
-            BottleneckMitigationItem(
-                bottleneck_description=f"Traffic Surges Exceeding Peak Concurrency ({capacity.traffic.peak_qps:,} QPS)",
-                mitigation_strategy=(
-                    f"Deployed on {arch.technology_stack.get('Compute Platform', 'Kubernetes')} configured with Horizontal Pod Autoscaling (HPA) "
-                    f"targeting ~{capacity.recommended_compute_pods} pods, backed by edge rate limiting at the API Gateway."
+        # DYNAMIC bottleneck mitigations from LLM-generated architecture (NOT hardcoded)
+        mitigations = []
+        if arch.bottleneck_mitigations:
+            # Use actual LLM-generated mitigations specific to this architecture
+            for bm_text in arch.bottleneck_mitigations:
+                # Split "Bottleneck: ... Mitigation: ..." if present
+                if "mitigation" in bm_text.lower():
+                    parts = bm_text.split("Mitigation:", 1) if "Mitigation:" in bm_text else bm_text.split("mitigation:", 1)
+                    bottleneck_desc = parts[0].replace("Bottleneck:", "").strip().rstrip(".")
+                    mitigation_desc = parts[1].strip() if len(parts) > 1 else bm_text
+                else:
+                    bottleneck_desc = bm_text[:80]
+                    mitigation_desc = bm_text
+
+                mitigations.append(
+                    BottleneckMitigationItem(
+                        bottleneck_description=bottleneck_desc,
+                        mitigation_strategy=mitigation_desc,
+                    )
+                )
+        else:
+            # Fallback: generate semi-dynamic defaults using actual architecture data
+            mitigations = [
+                BottleneckMitigationItem(
+                    bottleneck_description=f"Traffic Surges Exceeding Peak Concurrency ({capacity.traffic.peak_qps:,} QPS)",
+                    mitigation_strategy=(
+                        f"Horizontal Pod Autoscaling (HPA) targeting ~{capacity.recommended_compute_pods} pods, "
+                        f"backed by edge rate limiting at the API Gateway."
+                    ),
                 ),
-            ),
-            BottleneckMitigationItem(
-                bottleneck_description="Single Point of Failure in Relational Database",
-                mitigation_strategy="Configured Multi-AZ Active-Active replication with automated failover and read replicas.",
-            ),
-            BottleneckMitigationItem(
-                bottleneck_description="Database Connection Pool Exhaustion on Flash Read Bursts",
-                mitigation_strategy=f"Deployed {capacity.cache.recommended_nodes}-node Redis Cluster absorbing ~80% of read volume in-memory.",
-            ),
-        ]
+            ]
+
+        # Also incorporate deficiency log from critic if available
+        if scorecard.deficiency_log:
+            for deficiency in scorecard.deficiency_log[:3]:  # Top 3 deficiencies
+                mitigations.append(
+                    BottleneckMitigationItem(
+                        bottleneck_description=f"[{deficiency.id}] {deficiency.flaw_description}",
+                        mitigation_strategy=deficiency.prescribed_patch,
+                    )
+                )
 
         title = f"{spec.domain.value} System Architecture ({capacity.traffic.dau // 1_000_000 if capacity.traffic.dau >= 1_000_000 else capacity.traffic.dau // 1_000}M DAU)"
 
