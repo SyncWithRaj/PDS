@@ -44,12 +44,14 @@ CONVERSATION HISTORY:
 
 RULES:
 1. THINK step-by-step about what you need to do next.
-2. If you need more information, use a tool. DO NOT GUESS — research first.
-3. You may use tools multiple times. Each tool call gives you new observations.
-4. When you have gathered ENOUGH information, provide your FINAL_ANSWER.
-5. Your FINAL_ANSWER must be valid JSON matching the required output schema.
-6. Do NOT repeat the same tool call with the same input.
-7. Be efficient — don't use tools unnecessarily if you already have the info.
+2. You MUST use at least 2 tools before providing your FINAL_ANSWER. This is NON-NEGOTIABLE.
+3. On your FIRST step, you MUST use a tool (search_web or read_url) to research. Do NOT skip research.
+4. DO NOT provide FINAL_ANSWER on your first step. Always research first.
+5. If you need more information, use a tool. DO NOT GUESS — research first.
+6. You may use tools multiple times. Each tool call gives you new observations.
+7. When you have gathered ENOUGH information (after at least 2 tool uses), provide your FINAL_ANSWER.
+8. Your FINAL_ANSWER must be valid JSON matching the required output schema.
+9. Do NOT repeat the same tool call with the same input.
 
 RESPONSE FORMAT — You MUST respond in EXACTLY one of these two formats:
 
@@ -146,6 +148,23 @@ class ReActEngine:
             parsed = self._parse_response(response_text)
 
             if parsed["type"] == "FINAL_ANSWER":
+                # Enforce minimum tool usage — agents MUST research before answering
+                min_tool_calls = min(2, self.max_steps - 1)  # At least 2 tools, or max_steps-1
+                if len(tools_used) < min_tool_calls and step_num < self.max_steps and self.tools:
+                    logger.info(
+                        f"   Step {step_num}: Agent tried FINAL_ANSWER too early "
+                        f"({len(tools_used)}/{min_tool_calls} tools used). Redirecting to use tools."
+                    )
+                    history.append(ReActStep(
+                        step=step_num,
+                        thought=(
+                            f"I tried to answer too early without researching. "
+                            f"I must use at least {min_tool_calls} tools before answering. "
+                            f"Let me research first using {list(self.tools.keys())}."
+                        ),
+                    ))
+                    continue
+
                 logger.info(f"   Step {step_num}: Agent provided FINAL_ANSWER")
                 thought = parsed.get("thought", "Ready to answer.")
 
