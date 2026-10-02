@@ -142,16 +142,7 @@ class RequirementAnalyzerAgent:
         
         Falls back to direct Gemini structured call if ReAct fails.
         """
-        # Phase 0: Domain enhancement (now also agentic)
-        try:
-            from nirman.agents.pipeline.enhancer import PromptEnhancer
-            enhancer = PromptEnhancer(gemini_client=self.client)
-            enhanced_data = enhancer.enhance(prompt)
-            enhanced_prompt = enhanced_data.get("enhanced_prompt", prompt) if isinstance(enhanced_data, dict) else prompt
-            logger.info("✅ PromptEnhancer enriched user prompt with domain context.")
-        except Exception as e:
-            logger.warning(f"PromptEnhancer failed ({e}), using raw prompt.")
-            enhanced_prompt = prompt
+        enhanced_prompt = prompt
 
         # Phase 1: ReAct-powered analysis with web research
         try:
