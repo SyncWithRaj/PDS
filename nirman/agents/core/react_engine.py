@@ -65,7 +65,10 @@ THOUGHT: [Your reasoning about why you have enough information]
 FINAL_ANSWER:
 [Your complete JSON output matching the required schema]
 
-OUTPUT SCHEMA (your FINAL_ANSWER must match this):
+OUTPUT SCHEMA:
+Your FINAL_ANSWER MUST be a valid JSON *instance* of the following schema.
+Do NOT output the JSON schema definition itself (i.e. do not output keys like "properties" or "type"). Output the actual data values!
+
 {output_schema}
 
 IMPORTANT: Respond with ONLY Format A or Format B. Nothing else."""
@@ -450,9 +453,10 @@ class ReActEngine:
             f"You are {self.persona}.\n\n"
             f"GOAL: {goal}\n\n"
             f"You have gathered the following research:\n{observations_text}\n\n"
-            f"Based on ALL the information above, produce your FINAL answer as JSON "
-            f"matching this schema:\n{json.dumps(self.output_schema.model_json_schema(), indent=2)}\n\n"
-            f"Respond with ONLY the JSON object. No explanation."
+            f"Based on ALL the information above, produce your FINAL answer as a JSON *instance* "
+            f"of this schema (do NOT output the schema definition itself, output the actual data values):\n"
+            f"{json.dumps(self.output_schema.model_json_schema(), indent=2)}\n\n"
+            f"Respond with ONLY the JSON data object. No explanation."
         )
 
         try:
