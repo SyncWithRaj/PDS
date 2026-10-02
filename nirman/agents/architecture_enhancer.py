@@ -23,6 +23,7 @@ from nirman.schemas.generator import SystemArchitecture
 from nirman.schemas.analyzer import RequirementSpec
 from nirman.schemas.estimator import CapacityMetrics
 from nirman.tools.registry import build_default_registry
+from nirman.prompts import SHARED_MERMAID_RULES
 
 logger = logging.getLogger("nirman.agents.enhancer_arch")
 
@@ -88,29 +89,7 @@ Generate a RICH, DETAILED Mermaid flowchart with these rules:
 
 6. Minimum 15 connections in the diagram showing real inter-service communication
 
-7. ASCII only - no unicode characters. No special chars in labels without quotes.
-
-8. DARK COLOR THEME - Add these classDef styles at the TOP of the diagram and apply them:
-   classDef client fill:#1a1a2e,stroke:#e94560,color:#ffffff,stroke-width:2px
-   classDef ingress fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:2px
-   classDef compute fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:2px
-   classDef eventbus fill:#1b1b2f,stroke:#1f4068,color:#e94560,stroke-width:2px
-   classDef datastore fill:#162447,stroke:#e94560,color:#ffffff,stroke-width:2px
-   classDef cache fill:#533483,stroke:#e94560,color:#ffffff,stroke-width:2px
-   classDef ml fill:#1f4068,stroke:#533483,color:#ffffff,stroke-width:2px
-   classDef infra fill:#0a0a23,stroke:#1f4068,color:#00d2ff,stroke-width:2px
-
-   Apply classes using the :::className syntax on each node:
-   - Client/CDN/WAF nodes: :::client
-   - API Gateway/Auth nodes: :::ingress
-   - Microservices/compute nodes: :::compute
-   - Kafka/queues/event nodes: :::eventbus
-   - Database/storage nodes: :::datastore
-   - Redis/cache nodes: :::cache
-   - ML/Analytics nodes: :::ml
-   - Observability/DR/infra nodes: :::infra
-
-   Example: API_GW["API Gateway<br/>Rate limiting, TLS termination"]:::ingress
+{SHARED_MERMAID_RULES}
 
 SEQUENCE DIAGRAM REQUIREMENTS (CRITICAL):
 Generate a DETAILED Mermaid sequence diagram in the `sequence_diagram` field showing the system's MOST CRITICAL USER ACTION end-to-end.

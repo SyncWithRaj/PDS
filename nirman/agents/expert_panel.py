@@ -34,6 +34,7 @@ from nirman.schemas.generator import SystemArchitecture
 from nirman.schemas.analyzer import RequirementSpec
 from nirman.schemas.estimator import CapacityMetrics
 from nirman.tools.registry import build_default_registry
+from nirman.prompts import SHARED_MERMAID_RULES
 
 logger = logging.getLogger("nirman.expert_panel")
 
@@ -333,25 +334,7 @@ class ExpertPanelAgent:
         # Don't truncate if we can avoid it, or truncate carefully
         arch_json = architecture.model_dump_json(indent=2)
         
-        # Include the exact Mermaid rules and color definitions so the Lead Architect preserves them
-        mermaid_rules = (
-            "MERMAID DIAGRAM REQUIREMENTS:\n"
-            "1. Each node MUST include a description using <br/> tag (e.g., API_GW[\"API Gateway<br/>Rate limiting\"])\n"
-            "2. Edge labels MUST show the protocol AND data flowing (e.g., -->|\"REST/TLS 1.3\"|)\n"
-            "3. DARK COLOR THEME - You MUST include these exact classDefs at the top of your flowchart:\n"
-            "   classDef client fill:#1a1a2e,stroke:#e94560,color:#ffffff,stroke-width:2px\n"
-            "   classDef ingress fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:2px\n"
-            "   classDef compute fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:2px\n"
-            "   classDef eventbus fill:#1b1b2f,stroke:#1f4068,color:#e94560,stroke-width:2px\n"
-            "   classDef datastore fill:#162447,stroke:#e94560,color:#ffffff,stroke-width:2px\n"
-            "   classDef cache fill:#533483,stroke:#e94560,color:#ffffff,stroke-width:2px\n"
-            "   classDef ml fill:#1f4068,stroke:#533483,color:#ffffff,stroke-width:2px\n"
-            "   classDef infra fill:#0a0a23,stroke:#1f4068,color:#00d2ff,stroke-width:2px\n"
-            "4. Apply the classes using :::className syntax on each node.\n"
-            "5. Sequence diagram must be detailed and show exact payloads.\n"
-            "Do NOT output a basic diagram. PRESERVE the rich formatting and colors of the original diagrams."
-        )
-
+        # Include the shared Mermaid rules so the Lead Architect preserves the exact styles
         prompt = (
             f"You are the Lead Architect. Apply these expert-recommended fixes to the architecture.\n\n"
             f"EXPERT FINDINGS TO FIX:\n" + "\n".join(findings_text) + "\n\n"
@@ -359,7 +342,7 @@ class ExpertPanelAgent:
             f"Apply the fixes and return the updated SystemArchitecture. "
             f"Keep all existing components. Only modify what the experts flagged. "
             f"Update the Mermaid diagrams if components were added/modified, but strictly follow these rules:\n"
-            f"{mermaid_rules}"
+            f"{SHARED_MERMAID_RULES}"
         )
 
         try:
