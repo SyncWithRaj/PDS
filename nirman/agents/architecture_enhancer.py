@@ -51,9 +51,36 @@ ENHANCE & ADD:
 - Add 8-12 specific ConnectionEdge objects with real protocols (gRPC, REST, Kafka, WebSocket)
 - Deepen trade_offs to 3-5 SPECIFIC decisions with component names and quantitative impact
 - Deepen bottleneck_mitigations to 3-4 SPECIFIC bottlenecks with numbers
-- Generate a CLEAN Mermaid flowchart (ASCII only, no unicode, use subgraphs for layers, label edges)
 - Fill in proper scaling_strategy and redundancy for each component
 - Build a complete technology_stack mapping
+
+MERMAID DIAGRAM REQUIREMENTS (VERY IMPORTANT):
+Generate a RICH, DETAILED Mermaid flowchart with these rules:
+1. Each node MUST include a one-liner description using <br/> tag:
+   GOOD: API_GW["API Gateway<br/>Rate limiting, TLS termination, auth routing"]
+   GOOD: KAFKA["Apache Kafka<br/>3-broker cluster, 100K msg/sec throughput"]
+   BAD:  API_GW["API Gateway"]  (too simple, no description)
+
+2. Use subgraphs for EACH architectural layer with clear titles
+
+3. Edge labels MUST show the protocol AND data flowing:
+   GOOD: API_GW -->|"REST/TLS 1.3 - Auth tokens"| AUTH_SVC
+   GOOD: FANOUT -->|"Kafka topic: msg.created"| KAFKA
+   BAD:  API_GW --> AUTH_SVC  (no label)
+
+4. Add MORE connections to show the REAL complexity:
+   - Data flows (reads, writes, events)
+   - Control flows (health checks, circuit breakers)
+   - Async flows (event streaming, pub/sub)
+   - Monitoring flows (metrics, traces, logs)
+
+5. Use different edge styles for sync vs async:
+   - Sync: -->|"label"| (solid arrow)
+   - Async: -.->|"label"| (dotted arrow for events/queues)
+
+6. Minimum 15 connections in the diagram showing real inter-service communication
+
+7. ASCII only - no unicode characters. No special chars in labels without quotes.
 
 OUTPUT: Return a COMPLETE SystemArchitecture JSON object matching the schema exactly.
 
