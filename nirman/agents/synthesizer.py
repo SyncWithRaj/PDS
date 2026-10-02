@@ -130,6 +130,7 @@ class SynthesizerAgent:
             system_overview=arch.overview,
             capacity_planning=capacity,
             mermaid_diagram=arch.mermaid_diagram,
+            sequence_diagram=arch.sequence_diagram if arch.sequence_diagram else "",
             component_breakdown=components_detail,
             trade_offs=trade_offs,
             bottlenecks_and_mitigation=mitigations,
@@ -168,6 +169,12 @@ class SynthesizerAgent:
         md.append("```mermaid")
         md.append(dossier.mermaid_diagram.strip())
         md.append("```\n")
+
+        if dossier.sequence_diagram and dossier.sequence_diagram.strip():
+            md.append("## 3.1 Critical Path Sequence Diagram")
+            md.append("```mermaid")
+            md.append(dossier.sequence_diagram.strip())
+            md.append("```\n")
 
         md.append("## 4. Component Topology Breakdown")
         md.append("| Component Tier | Selected Technology | Purpose & Rationale |")
@@ -436,13 +443,24 @@ class SynthesizerAgent:
         </section>
 
         <section>
-            <h2>3. Visual Topology (Mermaid.js)</h2>
+            <h2>3. System Architecture (Mermaid.js)</h2>
             <div class="diagram-card">
                 <pre class="mermaid">
 {dossier.mermaid_diagram.strip()}
                 </pre>
             </div>
         </section>
+
+        {f'''
+        <section>
+            <h2>3.1 Critical Path Sequence Diagram</h2>
+            <div class="diagram-card">
+                <pre class="mermaid">
+{dossier.sequence_diagram.strip()}
+                </pre>
+            </div>
+        </section>
+        ''' if dossier.sequence_diagram and dossier.sequence_diagram.strip() else ''}
 
         <section>
             <h2>4. Component Topology Breakdown</h2>

@@ -43,6 +43,7 @@ class ArchitectureDossier(BaseModel):
     system_overview: str = Field(..., description="Executive summary and architectural narrative")
     capacity_planning: CapacityMetrics = Field(..., description="Back-of-the-envelope traffic, storage, and RAM math")
     mermaid_diagram: str = Field(..., description="Full production-grade Mermaid.js diagram code")
+    sequence_diagram: str = Field(default="", description="Mermaid sequence diagram showing the critical path data flow")
     component_breakdown: List[ComponentDetailItem] = Field(default_factory=list, description="Detailed component specifications")
     trade_offs: List[TradeOffItem] = Field(default_factory=list, description="Explicit architectural trade-off justifications")
     bottlenecks_and_mitigation: List[BottleneckMitigationItem] = Field(default_factory=list, description="Failure mode analysis and concrete mitigations")

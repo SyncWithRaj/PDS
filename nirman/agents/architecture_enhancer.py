@@ -104,6 +104,78 @@ Generate a RICH, DETAILED Mermaid flowchart with these rules:
 
    Example: API_GW["API Gateway<br/>Rate limiting, TLS termination"]:::ingress
 
+SEQUENCE DIAGRAM REQUIREMENTS (CRITICAL):
+Generate a DETAILED Mermaid sequence diagram in the `sequence_diagram` field showing the system's MOST CRITICAL USER ACTION end-to-end.
+
+Rules:
+1. Pick the single most important user action for this domain:
+   - Chat app: "User sends a message"
+   - E-commerce: "User completes checkout"
+   - Streaming: "User starts video playback"
+   - FinTech: "User initiates payment transfer"
+   - IoT: "Device sends telemetry data"
+
+2. Show EVERY service participant involved chronologically:
+   participant Client
+   participant CDN
+   participant API_GW as API Gateway
+   participant AUTH as Auth Service
+   participant SVC as Core Service
+   participant CACHE as Redis Cache
+   participant KAFKA as Kafka
+   participant DB as Database
+
+3. Show the REAL technical details on each arrow:
+   - Protocol used (REST, gRPC, WebSocket)
+   - Exact data payload (e.g., "POST /api/v1/messages {body, recipient_id}")
+   - Response codes and data returned
+   - Cache HIT vs MISS paths using alt/else blocks
+   - Async fire-and-forget calls using ->> (no response arrow)
+
+4. Use Mermaid sequence diagram features:
+   - `alt` / `else` blocks for conditional paths (cache hit vs miss)
+   - `par` blocks for parallel operations
+   - `Note over` for important annotations (e.g., "TLS 1.3 terminated here")
+   - `->>` for async calls (fire and forget to Kafka)
+   - `-->>` for response arrows
+   - `activate` / `deactivate` for showing processing time
+
+5. Minimum 15 message arrows showing the complete request lifecycle
+
+Example structure:
+```
+sequenceDiagram
+    participant C as Client
+    participant GW as API Gateway
+    participant AUTH as Auth Service
+    participant SVC as Message Service
+    participant CACHE as Redis Cache
+    participant Q as Kafka
+    participant DB as PostgreSQL
+
+    C->>GW: POST /api/v1/messages (TLS 1.3)
+    activate GW
+    Note over GW: Rate limit check (100 req/s/user)
+    GW->>AUTH: gRPC ValidateToken(JWT)
+    AUTH-->>GW: TokenValid {user_id, roles}
+    GW->>SVC: gRPC SendMessage {body, recipient}
+    activate SVC
+    SVC->>CACHE: GET user:{recipient_id}:status
+    alt Cache HIT
+        CACHE-->>SVC: online, ws_node_id
+    else Cache MISS
+        SVC->>DB: SELECT status FROM users WHERE id=$1
+        DB-->>SVC: {status: online, last_seen}
+        SVC->>CACHE: SET user:{recipient_id}:status (TTL 60s)
+    end
+    SVC->>DB: INSERT INTO messages (sender, recipient, body)
+    SVC->>Q: Produce msg.created {msg_id, recipient}
+    deactivate SVC
+    SVC-->>GW: 201 Created {msg_id, timestamp}
+    deactivate GW
+    GW-->>C: 201 Created
+```
+
 OUTPUT: Return a COMPLETE SystemArchitecture JSON object matching the schema exactly.
 
 CRITICAL RULES:
@@ -112,6 +184,7 @@ CRITICAL RULES:
 - All component IDs must be UPPER_SNAKE_CASE (e.g., API_GW, AUTH_SVC)
 - Connections must reference valid component IDs
 - trade_offs and bottleneck_mitigations must be List[str], not a single string
+- sequence_diagram must be a valid Mermaid sequenceDiagram (not flowchart)
 """
 
 
@@ -187,7 +260,9 @@ class ArchitectureEnhancerAgent:
         context_parts.append(
             "ENHANCE this base architecture into a production-grade SystemArchitecture. "
             "Keep all existing components and add missing layers to reach 12-15 total components. "
-            "Generate clean Mermaid diagram with subgraphs. Add detailed connections with protocols."
+            "Generate clean Mermaid flowchart with subgraphs, dark colors, and descriptions in each node. "
+            "ALSO generate a detailed Mermaid sequenceDiagram showing the most critical user action end-to-end "
+            "with cache hit/miss paths, async Kafka events, and protocol details."
         )
         
         user_prompt = "\n".join(context_parts)

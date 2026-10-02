@@ -60,7 +60,7 @@ class NirmanWorkflow:
         self.max_iterations = max_iterations
 
         # Instantiate agents
-        self.enhancer = PromptEnhancer()
+        self.enhancer = PromptEnhancer(gemini_client=self.client)
         self.analyzer = RequirementAnalyzerAgent(self.client)
         self.estimator = CapacityEstimator()
         self.generator = ArchitectureGeneratorAgent(self.client)

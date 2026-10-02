@@ -58,6 +58,7 @@ class SystemArchitecture(BaseModel):
     components: List[ComponentNode] = Field(default_factory=list, description="All architectural component nodes")
     connections: List[ConnectionEdge] = Field(default_factory=list, description="All service-to-service communication edges")
     mermaid_diagram: str = Field(..., description="Full production-grade Mermaid.js code")
+    sequence_diagram: str = Field(default="", description="Mermaid sequence diagram showing the critical path data flow (e.g., user sends message -> API GW -> Auth -> Service -> Kafka -> DB)")
     technology_stack: Dict[str, str] = Field(default_factory=dict, description="Key technology mappings (Gateway, DB, Cache, etc.)")
     trade_offs: List[str] = Field(
         default_factory=list,
