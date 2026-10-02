@@ -56,10 +56,10 @@ class ToolRegistry:
 
 def build_default_registry() -> ToolRegistry:
     """Build a registry with all default NirmanAI tools."""
-    from nirman.tools.search_web import SearchWebTool
-    from nirman.tools.read_url import ReadURLTool
-    from nirman.tools.python_repl import PythonREPLTool
-    from nirman.tools.validate_mermaid import ValidateMermaidTool
+    from nirman.tools.research.search_web import SearchWebTool
+    from nirman.tools.research.read_url import ReadURLTool
+    from nirman.tools.execution.python_repl import PythonREPLTool
+    from nirman.tools.validation.validate_mermaid import ValidateMermaidTool
 
     registry = ToolRegistry()
     registry.register(SearchWebTool())
