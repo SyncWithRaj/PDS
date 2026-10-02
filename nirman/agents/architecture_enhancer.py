@@ -82,6 +82,28 @@ Generate a RICH, DETAILED Mermaid flowchart with these rules:
 
 7. ASCII only - no unicode characters. No special chars in labels without quotes.
 
+8. DARK COLOR THEME - Add these classDef styles at the TOP of the diagram and apply them:
+   classDef client fill:#1a1a2e,stroke:#e94560,color:#ffffff,stroke-width:2px
+   classDef ingress fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:2px
+   classDef compute fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:2px
+   classDef eventbus fill:#1b1b2f,stroke:#1f4068,color:#e94560,stroke-width:2px
+   classDef datastore fill:#162447,stroke:#e94560,color:#ffffff,stroke-width:2px
+   classDef cache fill:#533483,stroke:#e94560,color:#ffffff,stroke-width:2px
+   classDef ml fill:#1f4068,stroke:#533483,color:#ffffff,stroke-width:2px
+   classDef infra fill:#0a0a23,stroke:#1f4068,color:#00d2ff,stroke-width:2px
+
+   Apply classes using the :::className syntax on each node:
+   - Client/CDN/WAF nodes: :::client
+   - API Gateway/Auth nodes: :::ingress
+   - Microservices/compute nodes: :::compute
+   - Kafka/queues/event nodes: :::eventbus
+   - Database/storage nodes: :::datastore
+   - Redis/cache nodes: :::cache
+   - ML/Analytics nodes: :::ml
+   - Observability/DR/infra nodes: :::infra
+
+   Example: API_GW["API Gateway<br/>Rate limiting, TLS termination"]:::ingress
+
 OUTPUT: Return a COMPLETE SystemArchitecture JSON object matching the schema exactly.
 
 CRITICAL RULES:
