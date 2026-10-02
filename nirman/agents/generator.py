@@ -1,11 +1,10 @@
 """
-NirmanAI - Architecture Generator Agent (Gemini LLM)
-====================================================
-Real LLM reasoning agent acting as Principal Cloud Solutions Architect:
-- Takes RequirementSpec and CapacityMetrics
-- Synthesizes end-to-end multi-tier component topologies
-- Selects cloud native datastores, queues, and compute tiers with technical rationale
-- Authors clean, structured, non-looping Mermaid.js diagrams
+NirmanAI - Architecture Generator Agent (ReAct Agentic)
+========================================================
+TRUE AUTONOMOUS AGENT for the Gemini path.
+
+When GENERATOR_ENGINE=local: GPU model drafts → ArchitectureEnhancer (ReAct) refines
+When GENERATOR_ENGINE=gemini: This agent uses ReAct to research + design + validate
 """
 
 import os
@@ -26,6 +25,8 @@ from nirman.schemas.generator import (
     CommunicationProtocol,
 )
 from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.react_engine import ReActEngine
+from nirman.tools.registry import build_default_registry
 
 logger = logging.getLogger("nirman.generator")
 
@@ -101,6 +102,7 @@ class ArchitectureGeneratorAgent:
     def __init__(self, gemini_client: Optional[GeminiClient] = None):
         self.client = gemini_client or GeminiClient()
         self._local_model = None  # Lazy-loaded singleton
+        self._registry = build_default_registry()
 
     def _validate_mermaid(self, diagram: str) -> list[str]:
         """Validate Mermaid diagram syntax for basic correctness."""
@@ -440,12 +442,44 @@ CRITICAL ADDITIONAL REQUIREMENTS:
                         logger.warning(f"Ollama generation failed ({e}), falling back to Gemini API pool...")
 
                 if arch is None:
-                    logger.info("☁️ Generating via Gemini cloud API...")
-                    arch = self.client.generate_structured(
-                        system_prompt=GENERATOR_SYSTEM_PROMPT,
-                        user_prompt=user_prompt,
-                        schema=SystemArchitecture,
-                    )
+                    # Try ReAct agent first for Gemini path
+                    if attempt == 1:
+                        try:
+                            logger.info("🤖 Generator ReAct Agent: researching & designing...")
+                            tools = self._registry.get_tools(["search_web", "read_url", "validate_mermaid"])
+                            engine = ReActEngine(
+                                gemini_client=self.client,
+                                persona="Distinguished Cloud Architect designing production-grade distributed systems",
+                                tools=tools,
+                                output_schema=SystemArchitecture,
+                                max_steps=10,
+                            )
+                            goal = (
+                                f"{GENERATOR_SYSTEM_PROMPT}\n\n"
+                                f"Design the architecture for:\n{user_prompt}\n\n"
+                                f"INSTRUCTIONS:\n"
+                                f"1. SEARCH for reference architectures in this domain\n"
+                                f"2. Design the architecture with 12-15 components\n"
+                                f"3. Generate Mermaid flowchart, then VALIDATE it\n"
+                                f"4. Generate a sequence diagram too\n"
+                                f"5. Produce FINAL_ANSWER as SystemArchitecture JSON"
+                            )
+                            result = engine.run(goal)
+                            arch = result.output
+                            logger.info(
+                                f"✅ ReAct Generator completed in {result.total_steps} steps, "
+                                f"{len(result.tools_used)} tool calls"
+                            )
+                        except Exception as react_e:
+                            logger.warning(f"ReAct generation failed ({react_e}), using direct Gemini call.")
+
+                    if arch is None:
+                        logger.info("☁️ Generating via Gemini cloud API (direct structured)...")
+                        arch = self.client.generate_structured(
+                            system_prompt=GENERATOR_SYSTEM_PROMPT,
+                            user_prompt=user_prompt,
+                            schema=SystemArchitecture,
+                        )
 
                 # Self-validation
                 issues = self._validate_architecture(arch)

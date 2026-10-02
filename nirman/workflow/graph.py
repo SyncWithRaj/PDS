@@ -1,20 +1,16 @@
 """
-NirmanAI - LangGraph Cyclic Architecture Workflow
-=================================================
-Production-grade state machine orchestrating the iterative feedback loop across 7 phases:
+NirmanAI - LangGraph Agentic Architecture Workflow
+====================================================
+Production-grade state machine orchestrating TRUE autonomous agents across 6 phases:
 
-Phase 0: PromptEnhancer     → Domain context enrichment (rule-based preprocessor)
-Phase 1: Analyzer           → NLP requirement extraction with self-validation & retry
-Phase 2: CapacityEstimator  → Deterministic mathematical capacity planning (NO LLM math)
-Phase 3: Generator          → Multi-tier topology synthesis with Mermaid validation
-Phase 4: Critic             → 8-pillar rubric audit with deterministic score recalculation
-Phase 5: Refiner            → Targeted surgical patching with safe rollback (conditional)
-Phase 6: Synthesizer        → Dynamic dossier compilation & Mermaid.js dashboard
+Phase 0: PromptEnhancer      → ReAct agent: domain research + enhancement
+Phase 1: Analyzer            → ReAct agent: compliance research + requirement extraction
+Phase 2: CapacityEstimator   → ReAct agent: Python REPL calculations + benchmark validation
+Phase 3: Generator           → ReAct agent: reference architecture research + design
+Phase 4: ExpertPanel         → 3 independent ReAct experts (Security, DB, SRE) + Lead Architect
+Phase 5: Synthesizer         → Template renderer (validates Mermaid)
 
-Features:
-- State rollback: tracks best_architecture/best_score, reverts on regression
-- Error handling: every node wrapped in try-except, sets state["error"] on failure
-- All LLM agents have self-validation, retry (up to 3 attempts), and self-correction
+Every agent has graceful fallback to direct Gemini structured call on ReAct failure.
 """
 
 import os
@@ -29,6 +25,7 @@ from nirman.agents.analyzer import RequirementAnalyzerAgent
 from nirman.agents.estimator import CapacityEstimator
 from nirman.agents.generator import ArchitectureGeneratorAgent
 from nirman.agents.architecture_enhancer import ArchitectureEnhancerAgent
+from nirman.agents.expert_panel import ExpertPanelAgent
 from nirman.agents.critic import ArchitectureCriticAgent
 from nirman.agents.refiner import ArchitectureRefinerAgent
 from nirman.agents.synthesizer import SynthesizerAgent
@@ -37,16 +34,13 @@ logger = logging.getLogger("nirman.workflow")
 
 
 class NirmanWorkflow:
-    """Cyclic LangGraph multi-agent engine for distributed system architecture synthesis.
+    """Agentic LangGraph multi-agent engine for distributed system architecture synthesis.
     
     Pipeline:
-    Enhancer → Analyzer → Estimator → Generator → Critic → [Refiner → Critic]* → Synthesizer → END
+    Enhancer → Analyzer → Estimator → Generator → ExpertPanel → Synthesizer → END
     
-    Key improvements over v1:
-    - PromptEnhancer integrated as first node (was dead code)
-    - CapacityEstimator wired as deterministic math node (was bypassed)
-    - State rollback prevents refinement regression
-    - Error handling at every node prevents pipeline crashes
+    Every agent is a TRUE autonomous ReAct agent with tools, research, and self-reflection.
+    The Expert Panel replaces the old Critic+Refiner loop with 3 independent expert agents.
     """
 
     def __init__(
@@ -59,12 +53,14 @@ class NirmanWorkflow:
         self.output_dir = output_dir
         self.max_iterations = max_iterations
 
-        # Instantiate agents
+        # Instantiate agents (all are now ReAct-powered)
         self.enhancer = PromptEnhancer(gemini_client=self.client)
         self.analyzer = RequirementAnalyzerAgent(self.client)
         self.estimator = CapacityEstimator(gemini_client=self.client)
         self.generator = ArchitectureGeneratorAgent(self.client)
         self.arch_enhancer = ArchitectureEnhancerAgent(self.client)
+        self.expert_panel = ExpertPanelAgent(self.client)
+        # Keep old agents as fallback (Expert Panel uses them internally if needed)
         self.critic = ArchitectureCriticAgent(self.client)
         self.refiner = ArchitectureRefinerAgent(self.client)
         self.synthesizer = SynthesizerAgent()
@@ -175,59 +171,56 @@ class NirmanWorkflow:
                     return {"error": f"Generator failed: {str(e)} | Fallback: {str(e2)}"}
 
         # ──────────────────────────────────────────────────────────────
-        # Phase 4: ArchitectureCritic (8-Pillar Audit + Score Recalc)
+        # Phase 4: Expert Panel (3 Independent Experts + Lead Architect)
+        #   Replaces old Critic + Refiner cyclic loop
         # ──────────────────────────────────────────────────────────────
-        def critic_step(state: NirmanState) -> Dict[str, Any]:
-            logger.info("🔍 Phase 4: ArchitectureCriticAgent (8-Pillar Rubric Audit)...")
+        def expert_panel_step(state: NirmanState) -> Dict[str, Any]:
+            logger.info("🏛️ Phase 4: Expert Panel (Security + Database + SRE)...")
             if state.get("error"):
                 return {}
             try:
-                scorecard = self.critic.audit(state["spec"], state["capacity"], state["architecture"])
-                current_score = scorecard.overall_score if scorecard else 0
-                best_score = state.get("best_score") or 0
-
-                result: Dict[str, Any] = {"scorecard": scorecard}
-
-                # Track best architecture for rollback
-                if current_score > best_score:
-                    result["best_architecture"] = state["architecture"]
-                    result["best_score"] = current_score
-                    logger.info(f"📈 New best architecture score: {current_score}/100")
-
-                return result
-            except Exception as e:
-                logger.error(f"❌ Phase 4 FAILED: {e}")
-                return {"error": f"Critic failed: {str(e)}"}
-
-        # ──────────────────────────────────────────────────────────────
-        # Phase 5: ArchitectureRefiner (Surgical Patches + Rollback)
-        # ──────────────────────────────────────────────────────────────
-        def refiner_step(state: NirmanState) -> Dict[str, Any]:
-            current_iter = state.get("iterations", 0) + 1
-            logger.info(f"🔧 Phase 5: ArchitectureRefinerAgent (Iteration {current_iter})...")
-            try:
-                refined_arch, iter_log = self.refiner.refine(
-                    state["architecture"],
-                    state["scorecard"],
-                    iteration_number=current_iter,
+                result = self.expert_panel.evaluate_and_refine(
+                    architecture=state["architecture"],
+                    spec=state["spec"],
+                    capacity=state["capacity"],
                 )
+
+                # Use the refined architecture
+                verdict = result.verdict
+                logger.info(
+                    f"✅ Expert Panel verdict: {verdict.consensus_score}/100 "
+                    f"({'ACCEPTED' if verdict.accepted else 'NEEDS WORK'}) | "
+                    f"{len(result.patches_applied)} patches applied"
+                )
+
+                # Build a scorecard-compatible object for the synthesizer
+                # (backward compat with existing synthesizer that expects a scorecard)
+                scorecard = self.critic.audit(state["spec"], state["capacity"], result.architecture)
+
+                return {
+                    "architecture": result.architecture,
+                    "scorecard": scorecard,
+                    "best_architecture": result.architecture,
+                    "best_score": verdict.consensus_score,
+                    "expert_verdict": {
+                        "consensus_score": verdict.consensus_score,
+                        "accepted": verdict.accepted,
+                        "summary": verdict.verdict_summary,
+                        "patches": result.patches_applied,
+                        "risks": verdict.remaining_risks,
+                    },
+                }
             except Exception as e:
-                logger.warning(f"⚠️ Refiner failed ({e}), rolling back to best architecture.")
-                refined_arch = state.get("best_architecture") or state["architecture"]
-                iter_log = None
-
-            history = list(state.get("refinement_history", []))
-            if iter_log:
-                history.append(iter_log)
-
-            return {
-                "architecture": refined_arch,
-                "iterations": current_iter,
-                "refinement_history": history,
-            }
+                logger.warning(f"⚠️ Expert Panel failed ({e}), falling back to old Critic...")
+                try:
+                    scorecard = self.critic.audit(state["spec"], state["capacity"], state["architecture"])
+                    return {"scorecard": scorecard}
+                except Exception as e2:
+                    logger.error(f"❌ Critic fallback also failed: {e2}")
+                    return {"error": f"Expert Panel and Critic both failed: {e} | {e2}"}
 
         # ──────────────────────────────────────────────────────────────
-        # Phase 6: Synthesizer (Dynamic Dossier Compilation)
+        # Phase 5: Synthesizer (Dynamic Dossier Compilation)
         # ──────────────────────────────────────────────────────────────
         def synthesizer_step(state: NirmanState) -> Dict[str, Any]:
             logger.info("📄 Phase 6: SynthesizerAgent (Compiling Dossier & Mermaid Dashboard)...")
@@ -261,7 +254,7 @@ class NirmanWorkflow:
                 return {"error": f"Synthesizer failed: {str(e)}"}
 
         # ══════════════════════════════════════════════════════════════
-        # Build the LangGraph State Machine
+        # Build the LangGraph State Machine (Linear Agentic Flow)
         # ══════════════════════════════════════════════════════════════
 
         # Add Nodes
@@ -269,59 +262,28 @@ class NirmanWorkflow:
         builder.add_node("analyzer", analyzer_step)
         builder.add_node("estimator", estimator_step)
         builder.add_node("generator", generator_step)
-        builder.add_node("critic", critic_step)
-        builder.add_node("refiner", refiner_step)
+        builder.add_node("expert_panel", expert_panel_step)
         builder.add_node("synthesizer", synthesizer_step)
 
-        # Define Edges: Enhancer → Analyzer → Estimator → Generator → Critic
+        # Define Edges: Linear agentic flow
+        # Enhancer → Analyzer → Estimator → Generator → ExpertPanel → Synthesizer → END
         builder.set_entry_point("enhancer")
         builder.add_edge("enhancer", "analyzer")
         builder.add_edge("analyzer", "estimator")
         builder.add_edge("estimator", "generator")
-        builder.add_edge("generator", "critic")
-
-        # Conditional Edge: Quality Gate
-        def route_critic(state: NirmanState) -> str:
-            # If any earlier phase errored, skip to synthesizer to output what we have
-            if state.get("error"):
-                logger.warning(f"⚠️ Error detected, routing to synthesizer: {state['error']}")
-                return "synthesize"
-
-            sc = state.get("scorecard")
-            iters = state.get("iterations", 0)
-            max_iters = state.get("max_iterations", self.max_iterations)
-
-            if sc and (not sc.is_accepted or sc.spof_detected) and iters < max_iters:
-                logger.info(
-                    f"🔄 Critic score {sc.overall_score}/100 requires refinement "
-                    f"(Iteration {iters+1}/{max_iters})."
-                )
-                return "refine"
-
-            score_str = f"{sc.overall_score}/100" if sc else "N/A"
-            logger.info(f"✅ Critic approved (Score: {score_str}). Routing to Synthesizer.")
-            return "synthesize"
-
-        builder.add_conditional_edges(
-            "critic",
-            route_critic,
-            {
-                "refine": "refiner",
-                "synthesize": "synthesizer",
-            },
-        )
-
-        # Refiner loops back to Critic for re-evaluation
-        builder.add_edge("refiner", "critic")
+        builder.add_edge("generator", "expert_panel")
+        builder.add_edge("expert_panel", "synthesizer")
         builder.add_edge("synthesizer", END)
 
         return builder.compile()
 
     def run(self, prompt: str, max_iterations: int = 2) -> Dict[str, Any]:
-        """Executes the full LangGraph multi-agent loop.
+        """Executes the full LangGraph agentic pipeline.
         
         Pipeline:
-        Enhancer → Analyzer → Estimator → Generator → Critic → [Refiner → Critic]* → Synthesizer
+        Enhancer → Analyzer → Estimator → Generator → ExpertPanel → Synthesizer
+        
+        Every agent is a TRUE autonomous ReAct agent that researches, thinks, and acts.
         """
         initial_state: NirmanState = {
             "raw_prompt": prompt,
@@ -335,6 +297,7 @@ class NirmanWorkflow:
             "refinement_history": [],
             "best_architecture": None,
             "best_score": None,
+            "expert_verdict": None,
             "dossier": None,
             "saved_files": None,
             "error": None,
