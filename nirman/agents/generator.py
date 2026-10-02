@@ -72,13 +72,16 @@ You must design:
      * Example: `OrderSvc -->|Kafka Topic: order.created| Kafka`
      * Example: `OrderSvc -->|Cache-Aside Sub-10ms| Redis`
      * Example: `OrderSvc -->|ACID Write / Multi-AZ| Aurora`
-   - Add modern dark-theme subgraph styles at the end of the diagram:
-     * `style Clients fill:#0f172a,stroke:#38bdf8,stroke-width:1px,color:#f8fafc`
-     * `style Edge fill:#1e293b,stroke:#0284c7,stroke-width:2px,color:#f8fafc`
-     * `style Compute fill:#0c4a6e,stroke:#0369a1,stroke-width:2px,color:#f8fafc`
-     * `style Streaming fill:#3b0764,stroke:#9333ea,stroke-width:2px,color:#f8fafc`
-     * `style Cache fill:#701a75,stroke:#c026d3,stroke-width:2px,color:#f8fafc`
-     * `style Persistence fill:#14532d,stroke:#16a34a,stroke-width:2px,color:#f8fafc`
+   - DARK COLOR THEME - Add these exact classDef styles at the TOP of the diagram:
+     * `classDef client fill:#1a1a2e,stroke:#e94560,color:#ffffff,stroke-width:2px`
+     * `classDef ingress fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:2px`
+     * `classDef compute fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:2px`
+     * `classDef eventbus fill:#1b1b2f,stroke:#1f4068,color:#e94560,stroke-width:2px`
+     * `classDef datastore fill:#162447,stroke:#e94560,color:#ffffff,stroke-width:2px`
+     * `classDef cache fill:#533483,stroke:#e94560,color:#ffffff,stroke-width:2px`
+     * `classDef ml fill:#1f4068,stroke:#533483,color:#ffffff,stroke-width:2px`
+     * `classDef infra fill:#0a0a23,stroke:#1f4068,color:#00d2ff,stroke-width:2px`
+   - Apply the classes using the `:::className` syntax on each node (e.g., `API_GW["API Gateway<br/>Rate limiting"]:::ingress`)
    - Strictly avoid loops or duplicate edges. Keep diagram between 30 and 65 lines.
 """
 
