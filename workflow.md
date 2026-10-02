@@ -1,406 +1,348 @@
-# NirmanAI — Comprehensive System Architecture & Engineering Workflow
-> **Technical Specification of the Autonomous Multi-Agent Synthesis & Self-Refining Evaluation Engine**
-> *Strictly aligned with the NirmanAI Architectural Masterplan ([`README.md`](README.md))*
+# NirmanAI — Pipeline Workflow
+
+> **From a one-line user prompt to a production-grade system architecture dossier in 7 phases.**
 
 ---
 
-## 1. Executive Summary & Design Philosophy
-
-Designing hyperscale, fault-tolerant, and cost-effective distributed systems requires reconciling competing trade-offs: latency vs. consistency, throughput vs. durability, and cost vs. redundancy. Standard one-shot LLM generations routinely fail because they hallucinate buzzwords, ignore back-of-the-envelope capacity constraints, and leave single points of failure (SPOFs) unaddressed.
-
-**NirmanAI** re-engineers this paradigm as an **autonomous, closed-loop engineering state machine**. Orchestrated natively via **LangGraph** and validated with strict **Pydantic v2** schema contracts, NirmanAI integrates:
-1. **Mathematical Capacity Planning**: Rigorous back-of-the-envelope calculations (QPS, 5-year multi-AZ storage, bandwidth, and cache RAM) before any component is selected.
-2. **Domain-Specific Fine-Tuned Model (`nirmanai:7b`)**: QLoRA-adapted on 20,000 production system design RFCs, postmortems, and trade-off matrices.
-3. **Independent 8-Pillar Quality Gate**: A ruthless Critic Agent auditing architectures against industry resilience rubrics and rejecting SPOFs.
-4. **Autonomous Surgical Refinement**: A feedback loop that mutates topology, introduces decoupling, and re-evaluates until quality converges ($\ge 85/100$).
-5. **Interactive Deliverables**: Automated synthesis of production-ready Mermaid.js flowcharts, Markdown dossiers, and interactive HTML dashboards.
-
----
-
-## 2. Comprehensive System Workflow Diagrams
-
-### 2.1 End-to-End Multi-Agent Dataflow Architecture
-
-The diagram below details the 6-stage lifecycle of a requirement, showing the exact Pydantic artifacts flowing between each autonomous agent:
+## High-Level Pipeline Flow
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'darkMode': true, 'background': '#0b0f19', 'mainBkg': '#111827', 'lineColor': '#64748b' }}}%%
 flowchart TD
-    %% Styling Definitions
-    classDef clientNode fill:#0369a1,stroke:#38bdf8,stroke-width:2px,color:#ffffff;
-    classDef agentNode fill:#1e293b,stroke:#0284c7,stroke-width:2px,color:#f8fafc;
-    classDef coreEngine fill:#047857,stroke:#34d399,stroke-width:3px,color:#ffffff;
-    classDef dataArtifact fill:#0f172a,stroke:#64748b,stroke-width:1px,color:#cbd5e1;
-    classDef decisionGate fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fef3c7;
-    classDef loopNode fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#f3e8ff;
-    classDef exportNode fill:#14532d,stroke:#22c55e,stroke-width:2px,color:#f0fdf4;
+    classDef user fill:#1a1a2e,stroke:#e94560,color:#ffffff,stroke-width:2px
+    classDef rule fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:2px
+    classDef gemini fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:2px
+    classDef local fill:#533483,stroke:#e94560,color:#ffffff,stroke-width:2px
+    classDef math fill:#1b1b2f,stroke:#1f4068,color:#e94560,stroke-width:2px
+    classDef output fill:#064e3b,stroke:#059669,color:#34d399,stroke-width:2px
+    classDef decision fill:#78350f,stroke:#d97706,color:#fbbf24,stroke-width:2px
 
-    %% Stage 1: Input & Ingestion
-    subgraph Stage1 ["Stage 1: Input & Ingestion"]
-        User["User Natural Language Goal<br/>(e.g., 'Uber Ride Dispatch for 30M DAU on AWS')"]:::clientNode
-        User --> WebUI["Web UI Prototype / REST API<br/>(nirman/web_ui.py)"]:::clientNode
-        WebUI --> LG["LangGraph Workflow Runner<br/>(NirmanWorkflow)"]:::agentNode
-    end
+    USER["User Query<br/>e.g. Build a chat app with 100K DAU"]:::user
 
-    %% Stage 2: Analysis & Capacity Planning
-    subgraph Stage2 ["Stage 2: Deterministic Capacity Planning & Spec"]
-        LG --> Analyzer["RequirementAnalyzerAgent<br/>(Principal Systems Architect)"]:::agentNode
-        Analyzer --> Spec["RequirementSpec (Pydantic)<br/>• Domain & Style<br/>• 4-6 Prioritized FRs<br/>• Explicit NFR Latency/SLA Targets"]:::dataArtifact
-        Analyzer --> Cap["CapacityMetrics (Pydantic)<br/>• Peak QPS (Read/Write Split)<br/>• 5-Year Storage (3x Multi-AZ Replication)<br/>• Peak Bandwidth (Gbps Ingress/Egress)<br/>• Redis Cache RAM (80/20 Rule) & Pod Count"]:::dataArtifact
-    end
+    P0["Phase 0: PromptEnhancer<br/>Rule-based domain context enrichment"]:::rule
+    P1["Phase 1: RequirementAnalyzer<br/>Gemini LLM - NLP extraction"]:::gemini
+    P2["Phase 2: CapacityEstimator<br/>Deterministic math engine"]:::math
+    P3A["Phase 3a: Fine-Tuned Model<br/>QLoRA Qwen2.5-7B on GPU<br/>Domain-specific skeleton"]:::local
+    P3B["Phase 3b: Enhancement Agent<br/>Gemini LLM - Enrich to 12-15 components"]:::gemini
+    P3_FALLBACK["Fallback: Direct Gemini<br/>If Draft-Refine fails"]:::gemini
+    P4["Phase 4: Architecture Critic<br/>Gemini LLM + Deterministic scoring"]:::gemini
+    GATE{"Score >= 85<br/>AND<br/>No SPOF?"}:::decision
+    P5["Phase 5: Architecture Refiner<br/>Gemini LLM - Surgical patches"]:::gemini
+    P6["Phase 6: Synthesizer<br/>Markdown + HTML dashboard"]:::output
+    DONE["Output Files<br/>Architecture Dossier + Mermaid Diagram"]:::output
 
-    %% Stage 3: Domain Architecture Synthesis
-    subgraph Stage3 ["Stage 3: Domain Architecture Synthesis (The Core Brain)"]
-        Spec & Cap ==> Generator["Domain Architecture Generator Agent<br/>(Principal Cloud Solutions Architect)"]:::agentNode
-        Generator <==> FineTunedModel[["🧠 Fine-Tuned LLM Engine: nirmanai:7b<br/>(Trained on 20k Production RFC Blueprints)<br/>Cloud Gemini REST Fallback"]]:::coreEngine
-        Generator --> ArchDraft["SystemArchitecture Blueprint (Pydantic)<br/>• Multi-Tier Component Topology (8 Layers)<br/>• Polyglot Database Selections with Rationale<br/>• Inter-Service Protocol Mappings (gRPC/Kafka)<br/>• Validated Production Mermaid.js Code"]:::dataArtifact
-    end
-
-    %% Stage 4: Multi-Criteria Audit Loop
-    subgraph Stage4 ["Stage 4: Multi-Criteria Audit & SPOF Detection"]
-        ArchDraft --> Critic["ArchitectureCriticAgent<br/>(Chaos Auditor & Staff Reviewer)"]:::agentNode
-        Critic --> Scorecard["CriticScorecard (Pydantic)<br/>• 8-Pillar Quantitative Scores (0 - 100)<br/>• Single Point of Failure (SPOF) Scan<br/>• Actionable Deficiency Log (DEF-IDs)"]:::dataArtifact
-        Scorecard --> QualityGate{"Quality Gate:<br/>Score >= 85 AND<br/>SPOF == False?"}:::decisionGate
-    end
-
-    %% Stage 5: Autonomous Feedback Loop
-    subgraph Stage5 ["Stage 5: Autonomous Self-Correction Loop"]
-        QualityGate -- "NO (Score < 85 or SPOF Found)" --> Refiner["ArchitectureRefinerAgent<br/>(System Resilience Specialist)"]:::loopNode
-        Refiner --> Patches["SurgicalPatches (Pydantic)<br/>• Multi-AZ Failover & Read Replicas<br/>• Cache-Aside Distributed Layer (Redis)<br/>• Asynchronous Kafka Decoupling<br/>• Edge API Gateway Rate Limiting"]:::loopNode
-        Patches ==>|"Apply Mutations to Blueprint"| ArchDraft
-        ArchDraft -.->|"Re-evaluate Mutated Topology"| Critic
-    end
-
-    %% Stage 6: Synthesis & Export
-    subgraph Stage6 ["Stage 6: Synthesis & Deliverables Export"]
-        QualityGate -- "YES (Accepted Architecture)" --> Synthesizer["SynthesizerAgent<br/>(Deliverable Compiler)"]:::exportNode
-        Synthesizer --> MDReport["Comprehensive Markdown Dossier<br/>(output/*.md)"]:::exportNode
-        Synthesizer --> HTMLDash["Interactive HTML Dashboard<br/>(output/*.html with Live Mermaid.js)"]:::exportNode
-        Synthesizer --> LiveView["Live Interactive Web UI SVG Rendering"]:::exportNode
-    end
-
-    class A,B,I highlight;
-    class G coreEngine;
-    class K decision;
-    class L,M patch;
-    class N,O,P,Q accept;
-
-    style Stage1 fill:#0b0f19,stroke:#334155,stroke-width:1px,color:#94a3b8;
-    style Stage2 fill:#0b0f19,stroke:#334155,stroke-width:1px,color:#94a3b8;
-    style Stage3 fill:#0b0f19,stroke:#047857,stroke-width:2px,color:#34d399;
-    style Stage4 fill:#0b0f19,stroke:#b45309,stroke-width:1px,color:#fbbf24;
-    style Stage5 fill:#0b0f19,stroke:#7c3aed,stroke-width:1px,color:#c084fc;
-    style Stage6 fill:#0b0f19,stroke:#15803d,stroke-width:1px,color:#4ade80;
+    USER --> P0
+    P0 --> P1
+    P1 --> P2
+    P2 --> P3A
+    P3A --> P3B
+    P3A -.->|"GPU inference fails"| P3_FALLBACK
+    P3B --> P4
+    P3_FALLBACK --> P4
+    P4 --> GATE
+    GATE -->|"YES - Accepted"| P6
+    GATE -->|"NO - Needs refinement"| P5
+    P5 --> P4
+    P6 --> DONE
 ```
 
 ---
 
-### 2.2 LangGraph State Machine & Conditional Branching Logic
+## Phase-by-Phase Explanation
 
-The engine's lifecycle is formally governed by the **LangGraph StateGraph** compiled in [`nirman/workflow/graph.py`](nirman/workflow/graph.py):
+### Phase 0: PromptEnhancer (Rule-Based)
 
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'darkMode': true, 'background': '#0b0f19' }}}%%
-stateDiagram-v2
-    [*] --> analyzer: StateGraph Entry
+**Input:** Raw user prompt (e.g., `"Build a chat app with 100K DAU"`)
 
-    state analyzer {
-        [*] --> ParsePrompt
-        ParsePrompt --> ExecuteCapacityMath
-        ExecuteCapacityMath --> FormulateRequirementSpec
-        FormulateRequirementSpec --> [*]
-    }
+**What it does:**
+- Detects the domain from keywords (FinTech, E-Commerce, Social, Gaming, IoT, etc.)
+- Injects domain-specific SLAs and feature requirements automatically
+- Example: Detects "chat" → Social domain → Adds `"P99 < 30ms feed retrieval, sub-100ms message delivery, 99.99% availability, WebSocket connection pooling"`
 
-    analyzer --> generator: State["spec"], State["capacity"]
+**Output:** Enriched prompt with domain context, SLAs, and feature requirements
 
-    state generator {
-        [*] --> IngestContext
-        IngestContext --> RunFineTunedLLM
-        RunFineTunedLLM --> ParseSystemArchitecture
-        ParseSystemArchitecture --> GenerateMermaidFlowchart
-        GenerateMermaidFlowchart --> [*]
-    }
-
-    generator --> critic: State["architecture"]
-
-    state critic {
-        [*] --> Evaluate8Pillars
-        Evaluate8Pillars --> ScanForSPOF
-        ScanForSPOF --> ComputeWeightedScore
-        ComputeWeightedScore --> LogDeficiencies
-        LogDeficiencies --> [*]
-    }
-
-    critic --> QualityCheck: route_critic(state)
-
-    state QualityCheck <<choice>>
-    QualityCheck --> refiner: (Score < 85 OR spof_detected) AND iters < max_iters
-    QualityCheck --> synthesizer: Score >= 85 AND NOT spof_detected (OR iters >= max_iters)
-
-    state refiner {
-        [*] --> IngestDeficiencies
-        IngestDeficiencies --> DetermineSurgicalPatches
-        DetermineSurgicalPatches --> MutateComponentTopology
-        MutateComponentTopology --> PatchMermaidDiagram
-        PatchMermaidDiagram --> IncrementIterationCounter
-        IncrementIterationCounter --> [*]
-    }
-
-    refiner --> critic: Re-evaluate Mutated Architecture
-
-    state synthesizer {
-        [*] --> AssembleDossier
-        AssembleDossier --> CompileMarkdownDossier
-        CompileMarkdownDossier --> RenderHTMLDashboard
-        RenderHTMLDashboard --> SaveToDisk
-        SaveToDisk --> [*]
-    }
-
-    synthesizer --> [*]: END (Returns NirmanState)
-```
+**Engine:** Pure rule-based (no LLM call, instant)
 
 ---
 
-### 2.3 Temporal Sequence Diagram
+### Phase 1: RequirementAnalyzer (Gemini LLM)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant UI as Web UI / CLI
-    participant WF as NirmanWorkflow (LangGraph)
-    participant ANA as RequirementAnalyzer
-    participant GEN as ArchitectureGenerator
-    participant LLM as Fine-Tuned Model (nirmanai:7b)
-    participant CRT as ArchitectureCritic
-    participant REF as ArchitectureRefiner
-    participant SYN as SynthesizerAgent
+**Input:** Enhanced prompt from Phase 0
 
-    User->>UI: Submit Architecture Goal (e.g. "Uber Dispatch for 30M DAU")
-    UI->>WF: invoke(initial_state)
+**What it does:**
+- Extracts structured requirements from natural language via Gemini
+- Outputs a `RequirementSpec` with:
+  - **Functional Requirements** (e.g., "Real-time messaging", "User authentication")
+  - **Non-Functional Requirements** (e.g., "P99 < 30ms", "99.99% uptime")
+  - Domain classification, cloud provider, architectural style
+  - Operational constraints
+
+**Agent capabilities:**
+- Self-validation: checks minimum 3 FRs, 2 NFRs
+- Self-correction: feeds validation errors back to Gemini for re-generation
+- Retry: up to 3 attempts
+
+**Output:** `RequirementSpec` Pydantic object
+
+**Engine:** Gemini 3.5-flash API
+
+---
+
+### Phase 2: CapacityEstimator (Deterministic Math)
+
+**Input:** `RequirementSpec` from Phase 1
+
+**What it does:**
+- Calculates ALL capacity numbers deterministically (NO LLM math — LLMs can't do arithmetic reliably)
+- Computes:
+  - **Traffic:** Peak QPS = DAU × 7 requests/user ÷ 40,000 active seconds × 5x peak multiplier
+  - **Storage:** Daily growth = DAU × 15KB/user/day → 5-year projection × 3x replication
+  - **Cache:** Redis RAM = Hot set (20% of daily data) with recommended node count
+  - **Network:** Ingress/Egress bandwidth from traffic × payload size
+  - **Compute:** Kubernetes pod count from QPS ÷ 500 QPS/pod
+
+**Output:** `CapacityMetrics` with exact numbers (e.g., DAU=100,000, Peak QPS=175, 5yr Storage=7.65 TB)
+
+**Engine:** Pure Python math (no LLM, instant, deterministic)
+
+---
+
+### Phase 3: Architecture Generator (Draft → Refine)
+
+This is the core innovation — a two-step generation using both models:
+
+#### Phase 3a: Fine-Tuned Model (Local GPU)
+
+**Input:** User prompt + `RequirementSpec` + `CapacityMetrics`
+
+**What it does:**
+- Runs the QLoRA fine-tuned Qwen2.5-7B-Instruct model on the local RTX A2000 GPU
+- The model was trained on 20,000 system architecture examples
+- It generates a **domain-specific skeleton** in its native format:
+  - `system_overview`: Architecture narrative
+  - `component_breakdown`: 6 domain-specific components with technology choices
+  - `mermaid_diagram`: Base flowchart diagram
+  - `trade_offs`: Architecture trade-off decisions
+  - `bottlenecks_and_mitigation`: Identified bottlenecks
+
+**Why the fine-tuned model matters:**
+- For a vague prompt like "Build a chat app", this model KNOWS from 20K training examples that a chat system needs: WebSocket Gateway, Event Streaming (Kafka), Graph Store (Neptune), Timeline Fanout Workers, etc.
+- Gemini alone with a vague prompt would produce generic components (API Gateway, Database, Cache)
+- The fine-tuned model provides **domain-specific foundation** that Gemini enhances
+
+**Output:** Raw dict with 6 domain-specific components
+
+**Engine:** Local GPU (RTX A2000, 5.3 GB VRAM, ~3 min inference)
+
+#### Phase 3b: Architecture Enhancement Agent (Gemini)
+
+**Input:** Fine-tuned model's raw output + original prompt + spec + capacity
+
+**What it does:**
+- Takes the 6-component skeleton and **enhances** it (not replaces):
+  - Keeps ALL domain-specific components from the fine-tuned model
+  - Adds missing architectural layers (Auth, CDN, Observability, DR, Analytics, Service Mesh)
+  - Expands to 12-15 total components with full schema compliance
+  - Generates rich Mermaid diagram with:
+    - Dark color theme (8 layer-based colors)
+    - One-liner descriptions in each node
+    - Labeled edges with protocols and data types
+    - Dotted arrows for async/event flows, solid for sync
+  - Adds 8-12 inter-service connections with specific protocols
+  - Deepens trade-offs with quantitative impact
+  - Adds bottleneck mitigations with numbers
+
+**Agent capabilities:**
+- Validates that enhancement actually ADDED components (not just replaced)
+- Mermaid sanitization (Unicode fixes, special char quoting)
+- Retry with self-correction on failure
+
+**Output:** Full `SystemArchitecture` Pydantic object (14 components, 15 connections)
+
+**Engine:** Gemini 3.5-flash API
+
+#### Fallback Path
+
+If the Draft→Refine process fails (GPU error, model issue, enhancement failure):
+- Automatically falls back to **direct Gemini generation** (Phase 3 generates the full architecture via Gemini alone)
+- This ensures the pipeline NEVER crashes — it always produces output
+
+---
+
+### Phase 4: Architecture Critic (Hybrid: Gemini + Algorithm)
+
+**Input:** `SystemArchitecture` + `RequirementSpec` + `CapacityMetrics`
+
+**What it does — Two-part evaluation:**
+
+**Part 1 — Gemini LLM (Qualitative Analysis):**
+- Acts as "Senior Principal Staff Architecture Auditor & Chaos Engineer"
+- Evaluates the architecture against the **8-Pillar Rubric**:
+
+| Pillar | Weight | What It Checks |
+|:---|:---:|:---|
+| Scalability & Throughput | 15% | DB sharding, HPA, stateless compute under peak traffic |
+| Latency & Performance SLAs | 15% | CDN caching, Redis cache-aside, async decoupling |
+| Reliability & Fault Tolerance | 15% | SPOFs, Multi-AZ failovers, circuit breakers, DLQs |
+| Data Consistency & CAP | 15% | SAGA patterns, ACID boundaries, replication lag |
+| Security & Zero Trust | 10% | mTLS service mesh, JWT/OIDC, AES-256, TLS 1.3 |
+| Cost & Resource Efficiency | 10% | Right-sized clusters, storage tiering |
+| ML/Data Pipeline Rigor | 10% | Feature consistency, model drift monitoring |
+| Requirement Alignment | 10% | Does it satisfy ALL user requirements? |
+
+- Detects **Single Points of Failure (SPOFs)**
+- Logs **DeficiencyFinding** objects with severity, target component, flaw description, failure scenario, and prescribed patch
+
+**Part 2 — Deterministic Algorithm (Math Override):**
+- **NEVER trusts LLM arithmetic** — recalculates ALL weighted scores deterministically
+- `weighted_score = raw_score × weight` (enforced per pillar)
+- `overall_score = sum(weighted_scores)` (enforced globally)
+- `is_accepted = (score >= 85) AND (no SPOF)` (enforced as boolean rule)
+- Overrides LLM's arithmetic if it disagrees
+
+**Output:** `CriticScorecard` with overall score, pillar breakdown, SPOF detection, deficiency log
+
+---
+
+### Quality Gate Decision
+
+```
+IF overall_score >= 85 AND spof_detected == False:
+    → ACCEPTED → Route to Phase 6 (Synthesizer)
     
-    rect rgb(15, 23, 42)
-        Note over WF,ANA: Phase 1: Analysis & Capacity Sizing
-        WF->>ANA: analyze(raw_prompt)
-        ANA-->>WF: (RequirementSpec, CapacityMetrics)
-    end
-
-    rect rgb(4, 120, 87)
-        Note over WF,GEN: Phase 2: Synthesis via Fine-Tuned Core
-        WF->>GEN: generate(spec, capacity)
-        GEN->>LLM: Inference (Prompt + Sizing Constraints)
-        LLM-->>GEN: Structured JSON (Topology + Mermaid)
-        GEN-->>WF: SystemArchitecture
-    end
-
-    rect rgb(180, 83, 9)
-        Note over WF,CRT: Phase 3: 8-Pillar Audit & SPOF Detection
-        WF->>CRT: audit(spec, capacity, architecture)
-        CRT-->>WF: CriticScorecard (Score, SPOF, DeficiencyLog)
-    end
-
-    alt Score < 85 or SPOF Detected (Refinement Loop)
-        rect rgb(88, 28, 135)
-            Note over WF,REF: Phase 4: Autonomous Surgical Self-Correction
-            WF->>REF: refine(architecture, scorecard, iteration)
-            REF->>LLM: Generate Patches & Mutate Topology
-            LLM-->>REF: Patched Architecture + SurgicalPatches
-            REF-->>WF: (Mutated Architecture, RefinementIteration)
-            WF->>CRT: audit(spec, capacity, mutated_architecture)
-            CRT-->>WF: Updated CriticScorecard
-        end
-    end
-
-    rect rgb(21, 128, 61)
-        Note over WF,SYN: Phase 5: Final Compilation & Export
-        WF->>SYN: synthesize(spec, capacity, architecture, scorecard, history)
-        SYN->>SYN: to_markdown(), to_html(), save()
-        SYN-->>WF: (ArchitectureDossier, saved_files)
-    end
-
-    WF-->>UI: Complete NirmanState
-    UI-->>User: Live SVG Diagram, Capacity Stats, Download Links (.md, .html)
+ELSE IF iterations < max_iterations:
+    → REJECTED → Route to Phase 5 (Refiner) for improvements
+    
+ELSE:
+    → Max iterations reached → Route to Phase 6 with best architecture
 ```
 
 ---
 
-## 3. Mathematical Capacity Estimation Engine
+### Phase 5: Architecture Refiner (Gemini LLM — Conditional)
 
-Before any architecture is generated, the [`RequirementAnalyzerAgent`](nirman/agents/analyzer.py) executes deterministic capacity math to guarantee that all database, compute, network, and caching layers are quantitatively grounded.
+**Input:** `SystemArchitecture` + `CriticScorecard` (with deficiency log)
 
-### 3.1 Throughput & Concurrency Formulation
-* **Average Throughput (QPS)**:
-  $$\text{QPS}_{\text{avg}} = \frac{\text{DAU} \times \text{Ops/User/Day}}{86,400\text{ seconds}}$$
-* **Peak Concurrency (QPS)**:
-  $$\text{QPS}_{\text{peak}} = \text{QPS}_{\text{avg}} \times \text{Peak Factor} \quad (\text{Default Peak Factor} = 3.0\times - 4.5\times)$$
-* **Traffic Split**:
-  $$\text{QPS}_{\text{read}} = \text{QPS}_{\text{peak}} \times R_{\text{read}}, \quad \text{QPS}_{\text{write}} = \text{QPS}_{\text{peak}} \times R_{\text{write}}$$
+**What it does:**
+- Reads the Critic's `deficiency_log` — specific patches like:
+  - `"DEF-01: DB_PRIMARY has no Multi-AZ replica → Add Aurora Multi-AZ failover"`
+  - `"DEF-02: No circuit breaker on PAYMENT_SVC → Add Resilience4j circuit breaker"`
+- Applies **surgical patches** to the architecture (doesn't regenerate from scratch)
+- Has **rollback safety**: if the refinement makes the score WORSE, reverts to the best previous architecture
 
-### 3.2 Storage Projections (Factoring Multi-AZ Replication)
-* **Daily Net Ingress**:
-  $$\text{Storage}_{\text{daily (GB)}} = \frac{\text{DAU} \times \text{Write Ops/User} \times \text{Avg Payload Size (Bytes)}}{10^9}$$
-* **5-Year Net Storage**:
-  $$\text{Storage}_{\text{5yr net (TB)}} = \frac{\text{Storage}_{\text{daily (GB)}} \times 365 \times 5}{1024}$$
-* **5-Year Effective Physical Storage (3x Multi-AZ)**:
-  $$\text{Storage}_{\text{effective (TB)}} = \text{Storage}_{\text{5yr net (TB)}} \times 3.0 \quad (\text{Primary + 2 Read Replicas})$$
+**Agent capabilities:**
+- Reads specific deficiency findings and applies targeted fixes
+- State rollback: tracks `best_architecture` and `best_score`, reverts on regression
+- Up to `max_iterations` refinement cycles (default: 2)
 
-### 3.3 Network Bandwidth Sizing
-* **Peak Ingress Bandwidth**:
-  $$\text{Bandwidth}_{\text{ingress (Gbps)}} = \frac{\text{QPS}_{\text{write}} \times \text{Write Payload (Bytes)} \times 8}{10^9}$$
-* **Peak Egress Bandwidth**:
-  $$\text{Bandwidth}_{\text{egress (Gbps)}} = \frac{\text{QPS}_{\text{read}} \times \text{Read Payload (Bytes)} \times 8}{10^9}$$
+**Output:** Refined `SystemArchitecture` → feeds back to Phase 4 (Critic) for re-evaluation
 
-### 3.4 In-Memory Caching (80/20 Pareto Rule)
-* **Redis Cluster RAM Sizing**:
-  $$\text{Cache RAM (GB)} = (\text{Daily Read Data (GB)}) \times 0.20$$
-* **Redis Node Sizing**:
-  $$\text{Node Count} = \left\lceil \frac{\text{Cache RAM (GB)}}{26\text{ GB per } r6g.xlarge \text{ node}} \right\rceil \times 2 \quad (\text{Primary + Replica})$$
-
-### 3.5 Compute Tier Autoscaling (Kubernetes Pod Sizing)
-* **Compute Pod Concurrency**:
-  $$\text{Pod Count} = \left\lceil \frac{\text{QPS}_{\text{peak}}}{\text{Pod Concurrency Target (e.g., 250 QPS/pod)}} \right\rceil$$
+**Engine:** Gemini 3.5-flash API
 
 ---
 
-## 4. Deep Agent Specification & Schema Contracts
+### Phase 6: Synthesizer (Output Generation)
 
-### 4.1 Requirement Analyzer Agent
-* **Role**: Principal Systems Architect & Capacity Planner.
-* **Input**: Unstructured natural language goal.
-* **Output Artifacts**:
-  - [`RequirementSpec`](nirman/schemas/analyzer.py): Classifies domain, scale tier, preferred style, prioritized functional requirements (`FR-01` to `FR-06`), and non-functional SLAs (P99 latency, availability, data consistency).
-  - [`CapacityMetrics`](nirman/schemas/estimator.py): TrafficMetrics, StorageMetrics, NetworkMetrics, CacheMetrics, and compute pod sizing.
+**Input:** Best `SystemArchitecture` + `RequirementSpec` + `CapacityMetrics` + `CriticScorecard` + refinement history
 
-### 4.2 Architecture Generator Agent (The Fine-Tuned LLM Engine)
-* **Role**: Principal Cloud Solutions Architect.
-* **Brain Engine**: **Fine-Tuned `nirmanai:7b`** (QLoRA on Qwen-2.5-7B, served via Ollama) with Google Gemini REST fallback.
-* **Synthesis Scope**: Generates an 8-layer multi-tier architecture:
-  1. *Client & Perimeter Tier*: Anycast DNS, Web, Mobile, IoT devices.
-  2. *Edge Ingress & Security Tier*: CloudFront CDN, AWS WAF, Envoy API Gateway with token bucket rate limiting.
-  3. *Stateless Microservices Compute Tier*: Kubernetes EKS cluster rightsized for the calculated pod concurrency.
-  4. *Asynchronous Streaming & Event Bus Tier*: Apache Kafka / AWS MSK partitioned by entity key.
-  5. *In-Memory Caching Tier*: Multi-node Redis Cluster sized for the 80/20 hot working set.
-  6. *Polyglot Persistent Datastore Tier*: OLTP PostgreSQL/Aurora + NoSQL DynamoDB/Cassandra + Analytical ClickHouse/BigQuery.
-  7. *AI/ML Inference & Real-Time Analytics Tier*: Triton Inference Server with dynamic batching (where applicable).
-  8. *Observability & Telemetry Tier*: Prometheus, OpenTelemetry, Grafana, Jaeger distributed tracing.
-* **Output Artifact**: [`SystemArchitecture`](nirman/schemas/generator.py) containing all `ComponentNode`s, `ConnectionEdge`s, and full Mermaid.js flowchart code.
+**What it does:**
+- Compiles everything into two deliverables:
 
-### 4.3 Architecture Critic Agent
-* **Role**: Senior Principal Staff Auditor & Chaos Engineer.
-* **Audit Rubric**: Evaluates the candidate blueprint across 8 weighted engineering pillars:
-  
-| Evaluation Pillar | Weight | Target Metric | Audit Focus |
-| :--- | :---: | :--- | :--- |
-| **1. Scalability & Throughput** | 15% | 10x Peak Headroom | Database sharding, HPA, stateless compute, connection pooling |
-| **2. Latency & Performance SLAs** | 15% | p99 < 50ms | Async decoupling, CDN caching, cache-aside Redis, non-blocking I/O |
-| **3. Reliability & Fault Tolerance** | 15% | 99.99% Availability | Zero SPOFs, Multi-AZ failovers, circuit breakers, dead-letter queues |
-| **4. Data Consistency & Integrity** | 15% | Strict CAP Adherence | SAGA patterns for distributed transactions, Raft / 2PC guarantees |
-| **5. Security & Zero Trust** | 10% | Zero Trust Architecture | mTLS service mesh, JWT/OIDC gateway, AES-256 at-rest, TLS 1.3 |
-| **6. Cost & Resource Efficiency** | 10% | Optimal Tiering | Hot/Warm/Cold storage tiers, rightsized clusters, spot GPU usage |
-| **7. ML & Data Pipeline Rigor** | 10% | No Data Leakage | Real-time feature consistency, dynamic batching, drift monitoring |
-| **8. Requirement Alignment** | 10% | 100% FR/NFR Coverage | Verifies all explicit user functional requirements and constraints |
+**1. Markdown Dossier (`.md`):**
+- Executive Summary & System Overview
+- Capacity Planning table (DAU, QPS, storage, cache, pods)
+- Visual Architecture Diagram (Mermaid with colors)
+- Component Topology Breakdown table
+- Trade-Off Analysis (3-5 decisions)
+- Bottleneck Identification & Mitigation Strategies
+- Critic Scorecard Audit (8-pillar table)
 
-* **Single Point of Failure (SPOF) Scan**:
-  - Flags any database deployed without a Multi-AZ replica (`spof_detected = True`).
-  - Flags any single API gateway without cross-region or multi-AZ ingress redundancy.
-  - Flags any synchronous RPC call chain spanning $>3$ sequential services.
-* **Output Artifact**: [`CriticScorecard`](nirman/schemas/critic.py) containing overall score, pillar breakdowns, and `DeficiencyFinding` log.
+**2. Interactive HTML Dashboard (`.html`):**
+- Dark-themed responsive UI
+- Live Mermaid.js rendering (diagrams render in-browser)
+- KPI cards for DAU, QPS, Storage, Cache
+- Color-coded score badge (green/yellow/red)
+- Component and connection tables
+- Pillar score breakdown with progress bars
 
-### 4.4 Architecture Refiner Agent
-* **Role**: System Resilience & Remediation Specialist.
-* **Action Taxonomy**: Applies surgical patches mapped to identified flaws:
-  - `MULTI_AZ_FAILOVER`: Replaces standalone database nodes with Multi-AZ automated failover clusters.
-  - `INTRODUCE_CACHE`: Inserts a distributed Redis Cluster between services and persistence tiers.
-  - `DECOUPLE_ASYNC`: Replaces blocking synchronous RPCs with Kafka / RabbitMQ event-driven queues.
-  - `SHARD_DATABASE`: Implements horizontal partitioning keys to eliminate write hot-spots.
-  - `ADD_API_GATEWAY`: Inserts an edge gateway with rate limiting, TLS termination, and WAF rules.
-* **Output Artifact**: Mutated [`SystemArchitecture`](nirman/schemas/generator.py) + [`RefinementIteration`](nirman/schemas/refiner.py) log.
+**Output:** Saved files at `output/{run_name}/architecture.md` and `architecture.html`
 
-### 4.5 Synthesizer Agent
-* **Role**: Deliverable Assembly Compiler.
-* **Function**: Assembles all verified artifacts into the 8-module **System Architecture Dossier**:
-  1. *Executive Summary & Quantitative Capacity Planning*
-  2. *Interactive Mermaid.js Architecture Diagram*
-  3. *Deep Component-by-Component Technical Specification*
-  4. *Data Storage, Partitioning Keys & Caching Policies*
-  5. *ML / Data Science / Big Data Subsystems (when present)*
-  6. *Resilience, Disaster Recovery & Security Matrix*
-  7. *Architectural Trade-Off Analysis (Why Option X was chosen over Option Y)*
-  8. *Critic Quality Scorecard & Full Refinement Changelog*
-* **Output Artifacts**:
-  - Production Markdown: `output/<system_title>.md`
-  - Standalone Interactive HTML: `output/<system_title>.html`
+**Engine:** Pure Python template rendering (no LLM, instant)
 
 ---
 
-## 5. Dual-Engine LLM Serving Infrastructure
-
-NirmanAI provides seamless switching between local fine-tuned execution and cloud API execution:
+## Complete Data Flow
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'darkMode': true, 'background': '#0b0f19' }}}%%
 flowchart LR
-    Agent["Nirman Agent<br/>(Generator / Critic / Analyzer / Refiner)"] --> Client["GeminiClient / Model Gateway<br/>(nirman/agents/gemini_client.py)"]
-    
-    Client --> Check{"Configured in .env?"}
-    
-    Check -- "Local Mode (Ollama)" --> Ollama[["Local Fine-Tuned Model<br/>nirmanai:7b (Qwen-2.5-7B QLoRA)<br/>• 100% Offline & Private<br/>• 20k Curated Blueprint Weights<br/>• Zero Cloud Quota Limits"]]
-    
-    Check -- "Cloud Mode (Gemini)" --> Cascade["Google Gemini REST API<br/>Model Fallback Cascade"]
-    Cascade --> M1["1. gemini-3.5-flash<br/>(Default: High-Capacity Reasoning)"]
-    M1 -- "HTTP 429 Quota" --> M2["2. gemini-flash-lite-latest<br/>(Sub-Second Latency Fallback)"]
-    M2 -- "HTTP 429 Quota" --> M3["3. gemini-3.1-flash-lite<br/>(Tertiary Redundancy Fallback)"]
+    classDef data fill:#16213e,stroke:#0f3460,color:#ffffff,stroke-width:1px
+    classDef agent fill:#0f3460,stroke:#533483,color:#ffffff,stroke-width:1px
+
+    PROMPT["User Prompt"]:::data
+    EP["Enhanced Prompt"]:::data
+    SPEC["RequirementSpec<br/>5 FRs, 4 NFRs"]:::data
+    CAP["CapacityMetrics<br/>DAU, QPS, Storage"]:::data
+    RAW["Raw Architecture<br/>6 components"]:::data
+    ARCH["SystemArchitecture<br/>14 components, 15 connections"]:::data
+    SCORE["CriticScorecard<br/>86.8/100"]:::data
+    DOSSIER["Output Files<br/>MD + HTML"]:::data
+
+    P0["PromptEnhancer"]:::agent
+    P1["Analyzer"]:::agent
+    P2["Estimator"]:::agent
+    P3A["Fine-Tuned GPU"]:::agent
+    P3B["Enhancer Agent"]:::agent
+    P4["Critic"]:::agent
+    P6["Synthesizer"]:::agent
+
+    PROMPT --> P0 --> EP --> P1 --> SPEC --> P2 --> CAP
+    CAP --> P3A --> RAW --> P3B --> ARCH --> P4 --> SCORE --> P6 --> DOSSIER
 ```
 
 ---
 
-## 6. Global State Schema (`NirmanState`)
+## Engine Summary
 
-The shared LangGraph state container defined in [`nirman/workflow/state.py`](nirman/workflow/state.py) enforces full typing across all nodes:
-
-```python
-class NirmanState(TypedDict):
-    """Global state container for the NirmanAI LangGraph cyclic architecture engine."""
-    raw_prompt: str                               # Initial user prompt
-    spec: Optional[RequirementSpec]               # Phase 1: Structured specification
-    capacity: Optional[CapacityMetrics]           # Phase 1: Capacity sizing calculations
-    architecture: Optional[SystemArchitecture]   # Phase 2 & 5: Candidate/Mutated blueprint
-    scorecard: Optional[CriticScorecard]          # Phase 3: 8-pillar audit evaluation
-    iterations: int                               # Current refinement loop count
-    max_iterations: int                           # Hard limit to prevent infinite loops (default 2)
-    refinement_history: List[RefinementIteration] # Historical changelog of applied patches
-    dossier: Optional[ArchitectureDossier]        # Phase 6: Final assembled deliverable
-    saved_files: Optional[Dict[str, str]]         # Disk paths for exported .md and .html
-    error: Optional[str]                          # Execution trace if an unrecoverable failure occurs
-```
+| Phase | Agent | Engine | LLM? | Time |
+|:---|:---|:---|:---:|:---:|
+| 0 | PromptEnhancer | Rule-based keyword matching | No | < 1s |
+| 1 | RequirementAnalyzer | Gemini 3.5-flash API | Yes | ~30s |
+| 2 | CapacityEstimator | Deterministic Python math | No | < 1s |
+| 3a | ArchitectureGenerator | Fine-tuned Qwen2.5-7B on GPU | Yes (local) | ~3 min |
+| 3b | ArchitectureEnhancer | Gemini 3.5-flash API | Yes | ~30s |
+| 4 | ArchitectureCritic | Gemini + Deterministic math | Hybrid | ~30s |
+| 5 | ArchitectureRefiner | Gemini 3.5-flash API | Yes | ~30s |
+| 6 | Synthesizer | Python template rendering | No | < 1s |
+| | **Total** | | | **~5-8 min** |
 
 ---
 
-## 7. Execution Quickstart
+## Key Design Decisions
 
-### Launch the Prototype Web UI
-```bash
-uv run --python .venv\Scripts\python.exe python nirman/web_ui.py
-```
-* Access the interface at **`http://localhost:8080`**.
-* Direct `.env` key loading (no API keys required in browser).
-* Real-time multi-agent execution pipeline display.
-* Dynamic client-side Mermaid.js SVG rendering with zoom/pan.
-* 1-Click downloads for both Markdown dossiers and HTML dashboards.
+### Why Draft → Refine instead of Gemini-only?
 
-### Programmatic Python Execution
-```python
-from nirman.workflow import NirmanWorkflow
+Users typically give **simple one-liner prompts** like "Build me an Amazon clone" or "Chat app with 100K DAU." These vague prompts give Gemini no domain context, resulting in generic architectures.
 
-# Initialize workflow engine with custom max iterations
-wf = NirmanWorkflow(max_iterations=2)
+The fine-tuned model, trained on 20,000 architecture examples, **knows** what specific components each domain needs. It provides the domain-specific foundation that Gemini then enriches with structural depth, proper schema compliance, and quantitative analysis.
 
-# Execute full cyclic multi-agent synthesis loop
-result = wf.run("Design an e-commerce flash sale platform handling 50M active shoppers on AWS")
+**Result:** 6 base components → 14 enhanced components. Score improved from 79.5 (fine-tuned alone) to 86.8-91.3 (Draft→Refine).
 
-print("System Title:", result["dossier"].title)
-print(f"Final Quality Score: {result['scorecard'].overall_score}/100 (Accepted: {result['scorecard'].is_accepted})")
-print(f"Single Points of Failure: {result['scorecard'].spof_count}")
-print("Markdown Dossier:", result["saved_files"]["markdown"])
-print("Interactive Dashboard:", result["saved_files"]["html"])
-```
+### Why deterministic scoring instead of trusting LLM?
+
+LLMs make arithmetic errors. In testing, Gemini reported `weighted_score = 15.3` for a raw score of 82 at weight 0.15 — the correct answer is `12.3`. The deterministic algorithm catches and corrects these errors, ensuring scores are mathematically consistent and acceptance decisions are reliable.
+
+### Why state rollback in the Refiner?
+
+Refinement can sometimes make architectures worse (e.g., removing a component to fix one issue creates another). The pipeline tracks the best architecture and score across iterations. If a refinement regresses the score, it rolls back to the previous best.
+
+---
+
+## Example E2E Run
+
+**Input:** `"Build a real-time chat application with 100K DAU and 100K throughput"`
+
+**Output (8.7 minutes):**
+- 14 components (API Gateway, CDN, Auth, WebSocket Gateway, Kafka, Neptune Graph DB, DynamoDB, S3, Redis, Istio, K8s, Data Lake, Observability, DR)
+- 15 inter-service connections with protocols
+- 63-line Mermaid diagram with dark color theme
+- 86.8/100 critic score (all 8 pillars PASS)
+- Full MD dossier + interactive HTML dashboard
