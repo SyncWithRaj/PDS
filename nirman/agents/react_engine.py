@@ -134,33 +134,47 @@ class ReActEngine:
 
             # Ask the LLM to THINK and decide next action
             logger.info(f"   Step {step_num}/{self.max_steps}: Thinking...")
+
+            # Dynamic user prompt — force tool usage if agent hasn't used any yet
+            if len(tools_used) == 0 and self.tools and step_num <= self.max_steps - 1:
+                tool_names = list(self.tools.keys())
+                user_msg = (
+                    f"You MUST use a tool now. Pick one of: {tool_names}. "
+                    f"Respond with:\nTHOUGHT: [your reasoning]\n"
+                    f"ACTION: {tool_names[0]}\n"
+                    f"ACTION_INPUT: {{\"query\": \"your search query\"}}"
+                )
+            else:
+                user_msg = "Continue your analysis. What is your next step?"
+
             try:
                 response_text = self.client.generate_text(
                     system_prompt=prompt,
-                    user_prompt="Continue your analysis. What is your next step?",
+                    user_prompt=user_msg,
                 )
             except Exception as e:
                 logger.warning(f"   Step {step_num}: LLM call failed: {e}")
                 # Try to force a final answer with what we have
                 return self._force_final_answer(goal, history, tools_used, reason=str(e))
 
-            # Parse the LLM response
-            parsed = self._parse_response(response_text)
+            # Parse the LLM response — suppress implicit JSON as FINAL_ANSWER if no tools used
+            parsed = self._parse_response(response_text, allow_implicit_final=(len(tools_used) >= 1 or step_num >= self.max_steps - 1))
 
             if parsed["type"] == "FINAL_ANSWER":
                 # Enforce minimum tool usage — agents MUST research before answering
-                min_tool_calls = min(2, self.max_steps - 1)  # At least 2 tools, or max_steps-1
-                if len(tools_used) < min_tool_calls and step_num < self.max_steps and self.tools:
+                min_tool_calls = 1  # At least 1 tool call
+                if len(tools_used) < min_tool_calls and step_num < self.max_steps - 1 and self.tools:
                     logger.info(
                         f"   Step {step_num}: Agent tried FINAL_ANSWER too early "
                         f"({len(tools_used)}/{min_tool_calls} tools used). Redirecting to use tools."
                     )
+                    # Pick the first available tool and suggest a reasonable query
+                    first_tool = list(self.tools.keys())[0]
                     history.append(ReActStep(
                         step=step_num,
                         thought=(
-                            f"I tried to answer too early without researching. "
-                            f"I must use at least {min_tool_calls} tools before answering. "
-                            f"Let me research first using {list(self.tools.keys())}."
+                            f"I must use at least {min_tool_calls} tool(s) before answering. "
+                            f"I will use the '{first_tool}' tool to research before giving my final answer."
                         ),
                     ))
                     continue
@@ -176,7 +190,33 @@ class ReActEngine:
 
                 # Parse the final answer
                 try:
-                    output = self._parse_final_answer(parsed["content"])
+                    # Check if the "final answer" is actually a disguised tool call
+                    content = parsed["content"]
+                    try:
+                        maybe_json = json.loads(content) if isinstance(content, str) else content
+                        if isinstance(maybe_json, dict) and ("action" in maybe_json or "tool_name" in maybe_json):
+                            # It's a tool call in JSON format — execute it
+                            tool_name = maybe_json.get("action") or maybe_json.get("tool_name", "")
+                            tool_args = maybe_json.get("action_input") or maybe_json.get("tool_args", {})
+                            if isinstance(tool_args, str):
+                                tool_args = {"query": tool_args}
+                            if tool_name in self.tools:
+                                logger.info(f"   Step {step_num}: Detected tool call in FINAL_ANSWER → executing {tool_name}")
+                                observation = self._execute_tool(tool_name, tool_args)
+                                logger.info(f"   Step {step_num}: OBSERVE → {observation[:100]}...")
+                                history[-1] = ReActStep(
+                                    step=step_num,
+                                    thought=maybe_json.get("thought", ""),
+                                    action=tool_name,
+                                    action_input=tool_args,
+                                    observation=observation[:2000],
+                                )
+                                tools_used.append(tool_name)
+                                continue
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                    output = self._parse_final_answer(content)
                     logger.info(f"✅ ReAct Agent completed in {step_num} steps, {len(tools_used)} tool calls")
                     return ReActResult(
                         output=output,
@@ -216,12 +256,33 @@ class ReActEngine:
                 tools_used.append(tool_name)
 
             else:
-                # Couldn't parse — add to history and retry
-                logger.warning(f"   Step {step_num}: Could not parse LLM response. Retrying...")
-                history.append(ReActStep(
-                    step=step_num,
-                    thought="(Agent response was unparseable. Retrying with clearer format.)",
-                ))
+                # Couldn't parse the response
+                if len(tools_used) == 0 and self.tools and step_num < self.max_steps - 1:
+                    # Auto-trigger first tool with a query from the goal
+                    first_tool_name = list(self.tools.keys())[0]
+                    # Extract a short query from the goal (first 100 chars, cleaned)
+                    goal_snippet = goal[:200].replace('\n', ' ').strip()
+                    # Use a reasonable search query
+                    auto_query = f"{goal_snippet[:100]} best practices architecture"
+                    
+                    logger.info(f"   Step {step_num}: Auto-triggering '{first_tool_name}' (LLM didn't use ACTION format)")
+                    observation = self._execute_tool(first_tool_name, {"query": auto_query})
+                    logger.info(f"   Step {step_num}: OBSERVE → {observation[:100]}...")
+                    
+                    history.append(ReActStep(
+                        step=step_num,
+                        thought=f"Auto-research: Using {first_tool_name} to gather domain knowledge.",
+                        action=first_tool_name,
+                        action_input={"query": auto_query},
+                        observation=observation[:2000],
+                    ))
+                    tools_used.append(first_tool_name)
+                else:
+                    logger.warning(f"   Step {step_num}: Could not parse LLM response. Retrying...")
+                    history.append(ReActStep(
+                        step=step_num,
+                        thought="(Agent response was unparseable. Retrying with clearer format.)",
+                    ))
 
         # Max steps reached — force final answer
         logger.warning(f"⚠️ ReAct Agent hit max_steps ({self.max_steps}). Forcing final answer.")
@@ -262,7 +323,7 @@ class ReActEngine:
             output_schema=schema_str,
         )
 
-    def _parse_response(self, text: str) -> Dict[str, Any]:
+    def _parse_response(self, text: str, allow_implicit_final: bool = True) -> Dict[str, Any]:
         """Parse LLM response into either TOOL_CALL or FINAL_ANSWER."""
         text = text.strip()
 
@@ -323,13 +384,15 @@ class ReActEngine:
             }
 
         # Check if the entire response is JSON (implicit FINAL_ANSWER)
-        try:
-            json_match = re.search(r'\{.*\}', text, re.DOTALL)
-            if json_match:
-                json.loads(json_match.group())
-                return {"type": "FINAL_ANSWER", "thought": "", "content": json_match.group()}
-        except (json.JSONDecodeError, AttributeError):
-            pass
+        # Only allow this if the agent has used enough tools
+        if allow_implicit_final:
+            try:
+                json_match = re.search(r'\{.*\}', text, re.DOTALL)
+                if json_match:
+                    json.loads(json_match.group())
+                    return {"type": "FINAL_ANSWER", "thought": "", "content": json_match.group()}
+            except (json.JSONDecodeError, AttributeError):
+                pass
 
         return {"type": "UNPARSEABLE", "raw": text}
 
