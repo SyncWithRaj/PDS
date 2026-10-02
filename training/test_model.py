@@ -36,13 +36,13 @@ def parse_args():
     parser.add_argument(
         "--base_model",
         type=str,
-        default="Qwen/Qwen2.5-7B-Instruct",
+        default="unsloth/Qwen2.5-7B-Instruct-bnb-4bit",
         help="Base model ID",
     )
     parser.add_argument(
         "--prompt",
         type=str,
-        default="Design an Enterprise Event-Driven FinTech payment settlement system on AWS with 100k+ TPS and Zero-Trust.",
+        default="Design a distributed real-time ride-sharing dispatch system like Uber for 10M active drivers and riders.",
         help="Test prompt",
     )
     return parser.parse_args()
@@ -55,19 +55,28 @@ def main():
     print("=" * 80)
 
     print(f"Loading Base Model: {args.base_model}...")
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
-    )
-
     tokenizer = AutoTokenizer.from_pretrained(args.adapter_dir, trust_remote_code=True)
-    base_model = AutoModelForCausalLM.from_pretrained(
-        args.base_model,
-        quantization_config=bnb_config,
-        device_map="auto",
-        trust_remote_code=True,
-    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    if "bnb-4bit" in args.base_model:
+        base_model = AutoModelForCausalLM.from_pretrained(
+            args.base_model,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+    else:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16,
+        )
+        base_model = AutoModelForCausalLM.from_pretrained(
+            args.base_model,
+            quantization_config=bnb_config,
+            device_map="auto",
+            trust_remote_code=True,
+        )
 
     print(f"Loading Trained LoRA Adapter from: {args.adapter_dir}...")
     model = PeftModel.from_pretrained(base_model, args.adapter_dir)

@@ -1,18 +1,16 @@
 """
-NirmanAI - Architecture Enhancer Agent
-=======================================
-Takes the raw output from the fine-tuned local model (domain-specific skeleton
-with 6 components, basic Mermaid, and trade-offs) and enhances it into a
-production-grade SystemArchitecture via Gemini.
+NirmanAI - Architecture Enhancer Agent (ReAct Agentic)
+======================================================
+TRUE AUTONOMOUS AGENT — NOT a wrapper.
 
-Design Pattern: Draft → Refine
-- Fine-tuned model provides: domain-specific component choices, base Mermaid,
-  architecture patterns learned from 20k training examples
-- Gemini Enhancement provides: schema compliance, missing layers, deeper
-  trade-offs with numbers, proper connections with protocols
+Uses the ReAct loop to:
+1. SEARCH for reference architectures in this specific domain
+2. READ relevant AWS/GCP architecture docs and blog posts
+3. DESIGN the architecture based on real-world research + fine-tuned model output
+4. VALIDATE the Mermaid diagram for syntax errors before submitting
+5. PRODUCE a research-backed, validated SystemArchitecture
 
-This is NOT a wrapper — the fine-tuned model's domain knowledge genuinely
-improves the final output vs Gemini generating from scratch on a vague prompt.
+Design Pattern: Draft → Research → Refine
 """
 
 import json
@@ -20,11 +18,21 @@ import logging
 from typing import Optional
 
 from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.react_engine import ReActEngine
 from nirman.schemas.generator import SystemArchitecture
 from nirman.schemas.analyzer import RequirementSpec
 from nirman.schemas.estimator import CapacityMetrics
+from nirman.tools.registry import build_default_registry
 
 logger = logging.getLogger("nirman.agents.enhancer_arch")
+
+ARCH_DESIGNER_PERSONA = (
+    "Distinguished Architect & Chief Systems Designer with 20+ years designing "
+    "production systems at AWS, Netflix, and Google. You specialize in distributed "
+    "systems, cloud-native patterns, event-driven architectures, and production-grade "
+    "infrastructure. You ALWAYS research reference architectures before designing, "
+    "and you ALWAYS validate your Mermaid diagrams for syntax errors."
+)
 
 
 ENHANCER_SYSTEM_PROMPT = """You are NirmanAI's Architecture Enhancement Agent.
@@ -203,6 +211,7 @@ class ArchitectureEnhancerAgent:
 
     def __init__(self, gemini_client: Optional[GeminiClient] = None):
         self.client = gemini_client or GeminiClient()
+        self._registry = build_default_registry()
 
     def enhance(
         self,
@@ -267,6 +276,48 @@ class ArchitectureEnhancerAgent:
         
         user_prompt = "\n".join(context_parts)
         
+        # Try ReAct agent first (research + validate)
+        try:
+            logger.info("🤖 ArchitectureEnhancer ReAct Agent: researching & designing...")
+            tools = self._registry.get_tools(["search_web", "read_url", "validate_mermaid"])
+            engine = ReActEngine(
+                gemini_client=self.client,
+                persona=ARCH_DESIGNER_PERSONA,
+                tools=tools,
+                output_schema=SystemArchitecture,
+                max_steps=12,
+            )
+
+            goal = (
+                f"{ENHANCER_SYSTEM_PROMPT}\n\n"
+                f"Task:\n{user_prompt}\n\n"
+                f"INSTRUCTIONS:\n"
+                f"1. SEARCH the web for reference architectures in this domain\n"
+                f"2. If you find a relevant architecture blog/doc, READ it\n"
+                f"3. Design the enhanced architecture with 12-15 components\n"
+                f"4. Generate the Mermaid flowchart, then VALIDATE it using validate_mermaid\n"
+                f"5. If validation fails, fix the errors and validate again\n"
+                f"6. Also generate a Mermaid sequenceDiagram\n"
+                f"7. Produce your FINAL_ANSWER as a SystemArchitecture JSON"
+            )
+
+            result = engine.run(goal)
+            arch: SystemArchitecture = result.output
+
+            # Sanitize Mermaid
+            arch.mermaid_diagram = self._sanitize_mermaid(arch.mermaid_diagram)
+
+            logger.info(
+                f"✅ ReAct Enhancement complete in {result.total_steps} steps, "
+                f"{len(result.tools_used)} tool calls | "
+                f"{len(arch.components)} components, {len(arch.connections)} connections"
+            )
+            return arch
+
+        except Exception as e:
+            logger.warning(f"ReAct enhancement failed ({e}), falling back to direct structured call.")
+        
+        # Fallback: direct structured call with retry
         last_error = None
         for attempt in range(1, self.MAX_RETRIES + 1):
             try:

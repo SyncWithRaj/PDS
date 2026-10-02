@@ -62,7 +62,7 @@ class NirmanWorkflow:
         # Instantiate agents
         self.enhancer = PromptEnhancer(gemini_client=self.client)
         self.analyzer = RequirementAnalyzerAgent(self.client)
-        self.estimator = CapacityEstimator()
+        self.estimator = CapacityEstimator(gemini_client=self.client)
         self.generator = ArchitectureGeneratorAgent(self.client)
         self.arch_enhancer = ArchitectureEnhancerAgent(self.client)
         self.critic = ArchitectureCriticAgent(self.client)

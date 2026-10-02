@@ -134,6 +134,21 @@ class GeminiClient:
         err_msg = last_error.read().decode("utf-8", errors="ignore") if hasattr(last_error, "read") else str(last_error)
         raise RuntimeError(f"Gemini API error across all models and keys: {err_msg}")
 
+    def generate_text(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> str:
+        """Invokes Gemini and returns raw text response (no schema enforcement).
+        
+        Used by the ReAct engine for free-form reasoning where the agent
+        decides between TOOL_CALL and FINAL_ANSWER dynamically.
+        """
+        return self._call_gemini_rest(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+        )
+
     def generate_structured(
         self,
         system_prompt: str,
