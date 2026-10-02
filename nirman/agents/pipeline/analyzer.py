@@ -16,7 +16,7 @@ import logging
 from typing import Optional, Tuple
 from pydantic import BaseModel, Field
 
-from nirman.schemas.analyzer import (
+from nirman.schemas.pipeline.analyzer import (
     RequirementSpec,
     DomainType,
     TargetScale,
@@ -25,15 +25,15 @@ from nirman.schemas.analyzer import (
     FunctionalRequirement,
     NonFunctionalRequirement,
 )
-from nirman.schemas.estimator import (
+from nirman.schemas.pipeline.estimator import (
     CapacityMetrics,
     TrafficMetrics,
     StorageMetrics,
     NetworkMetrics,
     CacheMetrics,
 )
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.react_engine import ReActEngine
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.core.react_engine import ReActEngine
 from nirman.tools.registry import build_default_registry
 
 logger = logging.getLogger("nirman.analyzer")
@@ -144,7 +144,7 @@ class RequirementAnalyzerAgent:
         """
         # Phase 0: Domain enhancement (now also agentic)
         try:
-            from nirman.agents.enhancer import PromptEnhancer
+            from nirman.agents.pipeline.enhancer import PromptEnhancer
             enhancer = PromptEnhancer(gemini_client=self.client)
             enhanced_data = enhancer.enhance(prompt)
             enhanced_prompt = enhanced_data.get("enhanced_prompt", prompt) if isinstance(enhanced_data, dict) else prompt

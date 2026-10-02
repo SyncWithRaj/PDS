@@ -23,9 +23,9 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.markdown import Markdown
 
-from nirman.agents.orchestrator import NirmanOrchestrator
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.dossier import ArchitectureDossier
+from nirman.agents.core.orchestrator import NirmanOrchestrator
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.dossier import ArchitectureDossier
 
 # Ensure UTF-8 output encoding for Windows terminals
 if sys.platform == "win32":

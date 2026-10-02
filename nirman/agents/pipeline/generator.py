@@ -15,17 +15,17 @@ from pydantic import BaseModel, Field
 
 import urllib.request
 import json_repair
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import (
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import (
     SystemArchitecture,
     ComponentNode,
     ConnectionEdge,
     LayerType,
     CommunicationProtocol,
 )
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.react_engine import ReActEngine
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.core.react_engine import ReActEngine
 from nirman.tools.registry import build_default_registry
 from nirman.prompts import SHARED_MERMAID_RULES
 
@@ -143,7 +143,7 @@ class ArchitectureGeneratorAgent:
     def _get_local_model(self):
         """Lazy-load the local GPU model singleton."""
         if self._local_model is None:
-            from nirman.agents.local_model import LocalModelLoader
+            from nirman.agents.core.local_model import LocalModelLoader
             self._local_model = LocalModelLoader()
         return self._local_model
 

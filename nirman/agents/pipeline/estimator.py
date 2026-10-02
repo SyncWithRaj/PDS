@@ -18,16 +18,16 @@ import logging
 from typing import Optional, Union
 from pydantic import BaseModel, Field
 
-from nirman.schemas.estimator import (
+from nirman.schemas.pipeline.estimator import (
     CapacityMetrics,
     TrafficMetrics,
     StorageMetrics,
     NetworkMetrics,
     CacheMetrics,
 )
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.react_engine import ReActEngine
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.core.react_engine import ReActEngine
 from nirman.tools.registry import build_default_registry
 
 logger = logging.getLogger("nirman.estimator")

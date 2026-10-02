@@ -17,11 +17,11 @@ import json
 import logging
 from typing import Optional
 
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.react_engine import ReActEngine
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.core.react_engine import ReActEngine
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
 from nirman.tools.registry import build_default_registry
 from nirman.prompts import SHARED_MERMAID_RULES
 

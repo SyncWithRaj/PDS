@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from nirman.workflow import NirmanWorkflow
-from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.core.gemini_client import GeminiClient
 
 load_dotenv()
 

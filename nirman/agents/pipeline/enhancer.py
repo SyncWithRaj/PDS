@@ -18,10 +18,10 @@ import logging
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.react_engine import ReActEngine
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.core.react_engine import ReActEngine
 from nirman.tools.registry import build_default_registry
-from nirman.schemas.analyzer import DomainType
+from nirman.schemas.pipeline.analyzer import DomainType
 
 logger = logging.getLogger("nirman.enhancer")
 

@@ -11,12 +11,12 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import CriticScorecard
-from nirman.schemas.refiner import RefinementIteration
-from nirman.schemas.dossier import (
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import CriticScorecard
+from nirman.schemas.legacy.refiner import RefinementIteration
+from nirman.schemas.pipeline.dossier import (
     ArchitectureDossier,
     ComponentDetailItem,
     TradeOffItem,

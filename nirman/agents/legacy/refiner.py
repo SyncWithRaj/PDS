@@ -14,14 +14,14 @@ import logging
 from typing import Optional, List, Tuple
 from pydantic import BaseModel, Field
 
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import CriticScorecard, DeficiencyFinding
-from nirman.schemas.refiner import (
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import CriticScorecard, DeficiencyFinding
+from nirman.schemas.legacy.refiner import (
     SurgicalPatch,
     PatchActionType,
     RefinementIteration,
 )
-from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.core.gemini_client import GeminiClient
 
 logger = logging.getLogger("nirman.refiner")
 

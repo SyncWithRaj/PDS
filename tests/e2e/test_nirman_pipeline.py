@@ -15,24 +15,24 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from nirman.schemas.analyzer import (
+from nirman.schemas.pipeline.analyzer import (
     RequirementSpec,
     DomainType,
     TargetScale,
     CloudEnvironment,
     ArchitecturalStyle,
 )
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import CriticScorecard, EvaluationPillar
-from nirman.schemas.dossier import ArchitectureDossier
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import CriticScorecard, EvaluationPillar
+from nirman.schemas.pipeline.dossier import ArchitectureDossier
 
-from nirman.agents.analyzer import RequirementAnalyzer
-from nirman.agents.estimator import CapacityEstimator
-from nirman.agents.generator import ArchitectureGenerator
-from nirman.agents.critic import ArchitectureCritic
-from nirman.agents.refiner import ArchitectureRefiner
-from nirman.agents.orchestrator import NirmanOrchestrator
+from nirman.agents.pipeline.analyzer import RequirementAnalyzer
+from nirman.agents.pipeline.estimator import CapacityEstimator
+from nirman.agents.pipeline.generator import ArchitectureGenerator
+from nirman.agents.legacy.critic import ArchitectureCritic
+from nirman.agents.legacy.refiner import ArchitectureRefiner
+from nirman.agents.core.orchestrator import NirmanOrchestrator
 
 
 class TestRequirementAnalyzer(unittest.TestCase):

@@ -14,17 +14,17 @@ import logging
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import (
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import (
     CriticScorecard,
     EvaluationPillar,
     VulnerabilitySeverity,
     DeficiencyFinding,
     PillarScore,
 )
-from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.core.gemini_client import GeminiClient
 
 logger = logging.getLogger("nirman.critic")
 

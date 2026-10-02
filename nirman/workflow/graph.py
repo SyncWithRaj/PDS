@@ -19,16 +19,16 @@ from typing import Dict, Any, Optional
 from langgraph.graph import StateGraph, END
 
 from nirman.workflow.state import NirmanState
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.enhancer import PromptEnhancer
-from nirman.agents.analyzer import RequirementAnalyzerAgent
-from nirman.agents.estimator import CapacityEstimator
-from nirman.agents.generator import ArchitectureGeneratorAgent
-from nirman.agents.architecture_enhancer import ArchitectureEnhancerAgent
-from nirman.agents.expert_panel import ExpertPanelAgent
-from nirman.agents.critic import ArchitectureCriticAgent
-from nirman.agents.refiner import ArchitectureRefinerAgent
-from nirman.agents.synthesizer import SynthesizerAgent
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.pipeline.enhancer import PromptEnhancer
+from nirman.agents.pipeline.analyzer import RequirementAnalyzerAgent
+from nirman.agents.pipeline.estimator import CapacityEstimator
+from nirman.agents.pipeline.generator import ArchitectureGeneratorAgent
+from nirman.agents.pipeline.architecture_enhancer import ArchitectureEnhancerAgent
+from nirman.agents.pipeline.expert_panel import ExpertPanelAgent
+from nirman.agents.legacy.critic import ArchitectureCriticAgent
+from nirman.agents.legacy.refiner import ArchitectureRefinerAgent
+from nirman.agents.pipeline.synthesizer import SynthesizerAgent
 
 logger = logging.getLogger("nirman.workflow")
 

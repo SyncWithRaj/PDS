@@ -6,12 +6,12 @@ Enhancer → Analyzer → Estimator → Generator → ExpertPanel → Synthesize
 """
 
 from typing import TypedDict, List, Optional, Dict, Any
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import CriticScorecard
-from nirman.schemas.refiner import RefinementIteration
-from nirman.schemas.dossier import ArchitectureDossier
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import CriticScorecard
+from nirman.schemas.legacy.refiner import RefinementIteration
+from nirman.schemas.pipeline.dossier import ArchitectureDossier
 
 
 class NirmanState(TypedDict):

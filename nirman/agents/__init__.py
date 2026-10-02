@@ -16,14 +16,14 @@ All agents feature:
 - Self-correction (feeds validation errors back to LLM)
 """
 
-from nirman.agents.gemini_client import GeminiClient
-from nirman.agents.analyzer import RequirementAnalyzerAgent
-from nirman.agents.estimator import CapacityEstimator
-from nirman.agents.enhancer import PromptEnhancer
-from nirman.agents.generator import ArchitectureGeneratorAgent
-from nirman.agents.critic import ArchitectureCriticAgent
-from nirman.agents.refiner import ArchitectureRefinerAgent
-from nirman.agents.synthesizer import SynthesizerAgent
+from nirman.agents.core.gemini_client import GeminiClient
+from nirman.agents.pipeline.analyzer import RequirementAnalyzerAgent
+from nirman.agents.pipeline.estimator import CapacityEstimator
+from nirman.agents.pipeline.enhancer import PromptEnhancer
+from nirman.agents.pipeline.generator import ArchitectureGeneratorAgent
+from nirman.agents.legacy.critic import ArchitectureCriticAgent
+from nirman.agents.legacy.refiner import ArchitectureRefinerAgent
+from nirman.agents.pipeline.synthesizer import SynthesizerAgent
 
 # Aliases for backward compatibility
 RequirementAnalyzer = RequirementAnalyzerAgent

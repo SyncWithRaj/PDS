@@ -24,7 +24,7 @@ from typing import Dict, Any, Optional, List, Type
 from pydantic import BaseModel
 
 from nirman.tools import Tool
-from nirman.agents.gemini_client import GeminiClient
+from nirman.agents.core.gemini_client import GeminiClient
 
 logger = logging.getLogger("nirman.react")
 

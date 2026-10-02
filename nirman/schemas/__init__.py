@@ -10,7 +10,7 @@ Strict, validated Pydantic v2 data models for the 5-Agent Architecture System:
   - dossier: Final comprehensive system architecture dossier
 """
 
-from nirman.schemas.analyzer import (
+from nirman.schemas.pipeline.analyzer import (
     DomainType,
     TargetScale,
     CloudEnvironment,
@@ -19,33 +19,33 @@ from nirman.schemas.analyzer import (
     NonFunctionalRequirement,
     RequirementSpec,
 )
-from nirman.schemas.estimator import (
+from nirman.schemas.pipeline.estimator import (
     TrafficMetrics,
     StorageMetrics,
     NetworkMetrics,
     CacheMetrics,
     CapacityMetrics,
 )
-from nirman.schemas.generator import (
+from nirman.schemas.pipeline.generator import (
     LayerType,
     CommunicationProtocol,
     ComponentNode,
     ConnectionEdge,
     SystemArchitecture,
 )
-from nirman.schemas.critic import (
+from nirman.schemas.legacy.critic import (
     EvaluationPillar,
     VulnerabilitySeverity,
     DeficiencyFinding,
     PillarScore,
     CriticScorecard,
 )
-from nirman.schemas.refiner import (
+from nirman.schemas.legacy.refiner import (
     PatchActionType,
     SurgicalPatch,
     RefinementIteration,
 )
-from nirman.schemas.dossier import (
+from nirman.schemas.pipeline.dossier import (
     ComponentDetailItem,
     TradeOffItem,
     BottleneckMitigationItem,

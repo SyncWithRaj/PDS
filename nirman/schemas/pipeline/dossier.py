@@ -8,11 +8,11 @@ trade-off matrices, and critic scorecard history.
 
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from nirman.schemas.analyzer import RequirementSpec
-from nirman.schemas.estimator import CapacityMetrics
-from nirman.schemas.generator import SystemArchitecture
-from nirman.schemas.critic import CriticScorecard
-from nirman.schemas.refiner import RefinementIteration
+from nirman.schemas.pipeline.analyzer import RequirementSpec
+from nirman.schemas.pipeline.estimator import CapacityMetrics
+from nirman.schemas.pipeline.generator import SystemArchitecture
+from nirman.schemas.legacy.critic import CriticScorecard
+from nirman.schemas.legacy.refiner import RefinementIteration
 
 
 class ComponentDetailItem(BaseModel):
