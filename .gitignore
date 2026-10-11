@@ -53,3 +53,8 @@ htmlcov/
 models/
 *.pt
 *.pth
+
+# Reference data source repos
+architecture-decision-record/
+system-design-interview/
+system-design-primer/
