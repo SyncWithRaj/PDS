@@ -1,41 +1,27 @@
-# NirmanAI - Project Roadmap & TODOs
+# NirmanAI - Project Roadmap & Status
 
-## 📋 Upcoming Enhancements (Backlog)
+## Completed Milestones
 
-### 1. Dedicated "Diagram Visualizer & Stylist Agent" (LangGraph Expansion)
-- [ ] **Architecture**: Expand the current 7-agent LangGraph workflow into an **8-Agent Swarm** by introducing `DiagramVisualizerAgent`.
-- [ ] **Workflow Position**: Placed between `ArchitectureGeneratorAgent` and `ArchitectureCriticAgent` (`Enhancer` → `Analyzer` → `Estimator` → `Generator` → **`DiagramVisualizer`** → `Critic` → `Refiner` → `Synthesizer`).
-- [ ] **Agent Responsibility**:
-  - Ingests raw components, data flows, and capacity metrics from the generator.
-  - Generates rich, production-grade Mermaid.js diagrams with 2-line semantic cards:
-    ```mermaid
-    Kafka[["Apache Kafka Cluster<br/><b>Role:</b> High-throughput async ingestion of GPS pings & ride dispatch events"]]
-    Postgres[("Amazon Aurora PostgreSQL<br/><b>Role:</b> ACID transactional store for ride payments & ledger")]
-    ```
-  - Enforces semantic node shapes: cylinders `[(...)]` for persistence, double brackets `[[...]]` for streaming queues, rectangles `[...]` for microservices.
-  - Applies cohesive dark-mode SVG themes and subgraph boundaries.
-- [ ] **Deterministic Fallback**: Include a Python enricher layer to guarantee 100% two-line card coverage if the LLM output is brief.
-
----
-
-## 🚀 Immediate Next Steps
-- [ ] **End-to-End Pipeline Test**: Run the full 7-phase LangGraph pipeline with the local fine-tuned model to verify everything works together.
-- [ ] **Web UI Test**: Launch `web_ui.py`, submit a prompt, verify the HTML dashboard renders with dynamic trade-offs.
+- [x] **210k+ Dataset Curation & Processing**: Synthetically generated architecture dossiers and unified with open-source QnA pairs into `datasets/`.
+- [x] **QLoRA Fine-Tuning Execution**: 100% completed on NVIDIA RTX A2000 GPU (Qwen2.5-7B-Instruct 4-bit).
+- [x] **Local GPU Singleton Loader**: `LocalModelLoader` supports loading cached 4-bit base model + LoRA adapter directly.
+- [x] **Autonomous ReAct Agent Engine**: Think-Act-Observe loop with retry, self-validation, schema self-correction, and tool sandbox (`search_web`, `read_url`, `python_repl`, `validate_mermaid`).
+- [x] **Deterministic Capacity Math Engine**: Exact formulas for Read/Write QPS, 5-year storage growth, and cache RAM (Phase 2).
+- [x] **Multi-Agent 6-Phase Pipeline Orchestration**: Implemented via LangGraph (`PromptEnhancer` -> `RequirementAnalyzer` -> `CapacityEstimator` -> `ArchitectureGenerator` / `ArchitectureEnhancer` -> `ExpertPanel` -> `Synthesizer`).
+- [x] **Parallel 3-Expert Panel Debate**: Security Lead, Database Architect, and SRE Lead review in parallel, followed by Lead Architect reconciler applying patches.
+- [x] **DRY Mermaid Styling**: Shared dark theme and node formatting rules unified in `nirman/prompts.py`.
+- [x] **Multi-Key API Pool Rotation**: Automatic cycling across multiple Gemini API keys on HTTP 429 rate limits.
+- [x] **Codebase Semantic Restructuring**: Clean directory structure categorizing agents (`core/`, `pipeline/`, `legacy/`), schemas (`pipeline/`, `legacy/`), tools (`research/`, `execution/`, `validation/`), and interfaces (`cli.py`, `web_ui.py`).
+- [x] **End-to-End Agentic Validation**: Verified with full E2E run (`tests/e2e/test_e2e_agentic.py`) producing 93.2/100 Critic Audit Score and 86/100 Expert Panel Score.
+- [x] **Interactive Web UI**: Standalone browser dashboard in `nirman/interfaces/web_ui.py`.
+- [x] **Interactive Terminal CLI**: Rich CLI synthesizer in `nirman/interfaces/cli.py`.
+- [x] **Automated Setup Scripts**: Cross-platform post-clone setup via `setup.ps1` (PowerShell) and `setup.sh` (Bash).
 
 ---
 
-## ✅ Completed Milestones
-- [x] **20k Gold Dataset Preparation**: Rich system design dossiers structured for instruction fine-tuning.
-- [x] **QLoRA Fine-Tuning Execution**: 100% completed (1250/1250 steps, Epoch 1.0) on NVIDIA RTX A2000 12GB.
-- [x] **Convergence Metrics**: Training loss dropped from `1.5285` to `0.2698`; token accuracy reached `91.46%`.
-- [x] **Resilience & Checkpoint Recovery**: Resumed after unexpected power outages using saved optimizer and dataloader states.
-- [x] **Direct Inference Quality Validation**: Validated via `training/test_model.py` generating accurate JSON dossiers, capacity estimations, and structured Mermaid topologies.
-- [x] **Agent Architecture Audit**: Comprehensive audit of all 18 files identifying critical bugs, dead code, and anti-patterns (see `docs/agent_architecture_audit.md`).
-- [x] **Full Agent Refactoring**: All 4 LLM agents refactored from thin wrappers to real agents with retry, self-validation, self-correction, and deterministic scoring.
-- [x] **Synthesizer Dynamic Trade-Offs**: Replaced 100% hardcoded trade-offs with dynamic extraction from `arch.trade_offs` and `arch.bottleneck_mitigations`.
-- [x] **CapacityEstimator Integration**: Wired as Phase 2 deterministic math node in LangGraph (was bypassed).
-- [x] **PromptEnhancer Integration**: Wired as Phase 0 domain context enrichment node (was dead code).
-- [x] **Orchestrator Deprecation**: Deleted broken 550-line `orchestrator.py`, all orchestration via LangGraph.
-- [x] **State Rollback**: Added `best_architecture`/`best_score` tracking with automatic rollback on refinement regression.
-- [x] **GeminiClient Fixes**: Fixed fictional model names, added native JSON mode, fixed `max_retries` parameter.
-- [x] **Fine-Tuned Model Connected**: Created `LocalModelLoader` singleton with `GENERATOR_ENGINE=local` support — loads cached 4-bit base + LoRA adapter directly on RTX A2000 GPU.
+## 🔮 Upcoming Enhancements (Future Horizon)
+
+- [ ] **Interactive Conversational Copilot**: Allow users to query the architecture or request targeted mutations (e.g., "Replace Redis with DynamoDB DAX", "Add a Kafka dead-letter topic") without regenerating from scratch.
+- [ ] **Infrastructure-as-Code (IaC) Generation**: Automatically compile the validated architecture diagram into deployable Terraform modules or AWS CloudFormation templates.
+- [ ] **Live Inter-Agent Debate Streaming**: Stream WebSocket updates to the web interface so users can observe the Security and Database experts debating in real time.
+- [ ] **100% Offline Air-Gapped Mode**: Full pipeline execution using only local quantized models without external cloud dependencies.

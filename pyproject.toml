@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nirmanai"
+version = "0.2.0"
+description = "Autonomous Multi-Agent System Architecture Synthesis & Self-Refining Evaluation Engine"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "NirmanAI Team"}
+]
+dependencies = [
+    "pydantic>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "json-repair>=0.25.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "duckduckgo-search>=6.0.0",
+    "google-generativeai>=0.8.0",
+]
+
+[project.optional-dependencies]
+gpu = [
+    "torch>=2.2.0",
+    "transformers>=4.40.0",
+    "peft>=0.10.0",
+    "bitsandbytes>=0.43.0",
+    "accelerate>=0.29.0",
+]
+
+[project.scripts]
+nirman = "nirman.interfaces.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nirman*"]
